@@ -8,6 +8,8 @@
 - przeglądać, edytować i usuwać fiszki w swojej kolekcji
 - odbywać sesje powtórek oparte na zewnętrznej bibliotece spaced repetition
 
+System automatycznie śledzi każdą generację AI (czas, model, źródło) oraz loguje błędy generowania dla celów audytu i analizy.
+
 ## 2. Problem użytkownika
 
 Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do stosowania efektywnej metody nauki typu spaced repetition, co obniża motywację i skuteczność procesu nauki.
@@ -17,7 +19,10 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
 - Uwierzytelnianie: rejestracja, logowanie i zarządzanie sesją użytkownika
 - Generowanie fiszek AI: pole tekstowe (1000–10000 znaków), stała liczba 10 fiszek, pasek postępu z procentami oraz komunikat "Trwa generowanie"
 - Przegląd kandydatów: lista propozycji z akcjami akceptuj, edytuj, odrzuć; zapisanie zaakceptowanych do kolekcji
-- Ręczne dodawanie fiszek: formularz z polami "przód" i "tył"
+- Śledzenie generacji: każda akcja generowania AI tworzy obiekt generacji grupujący wygenerowane fiszki; zawiera: czas generacji, użyty model AI, długość i hash źródłowego tekstu, identyfikator użytkownika
+- Logowanie błędów generacji: błędy podczas generowania AI są zapisywane w systemie (generation_error_logs) z informacjami: typ błędu, komunikat, użyty model, długość i hash tekstu, identyfikator użytkownika
+- Niezależne fiszki: fiszki mogą istnieć poza generacjami (np. tworzone ręcznie lub zaakceptowane kandydaty)
+- Ręczne dodawanie fiszek: formularz z polami "przód" (maks. 200 znaków) i "tył" (maks. 500 znaków)
 - Zarządzanie kolekcją: widok z paginacją i wyszukiwaniem, możliwość edycji i usuwania fiszek
 - Integracja modułu powtórek: sesje nauki oparte na bibliotece open source, wywoływane z poziomu kolekcji
 - Obsługa pustych stanów: widoczny przycisk zachęcający do głównej akcji w przypadku braku danych
@@ -73,6 +78,24 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   Opis: Jako użytkownik chcę otrzymać komunikat o błędzie, jeśli proces generowania fiszek się nie powiedzie.
   Kryteria akceptacji:
   - W przypadku błędu sieci lub API wyświetlany jest przejrzysty komunikat
+  - Błąd jest zapisywany w systemie wraz z kontekstem (typ błędu, model, tekst źródłowy)
+
+- ID: US-005A
+  Tytuł: Śledzenie generacji
+  Opis: Jako system chcę rejestrować każdą akcję generowania fiszek AI jako osobny obiekt generacji, aby umożliwić audyt i analizę.
+  Kryteria akceptacji:
+  - Każde uruchomienie generowania AI tworzy rekord generacji
+  - Rekord zawiera: timestamp, użyty model AI, długość i hash źródłowego tekstu, ID użytkownika
+  - Wygenerowane fiszki są powiązane z tym rekordem generacji
+  - Fiszki ręczne nie są powiązane z żadną generacją
+
+- ID: US-005B
+  Tytuł: Logowanie błędów generacji
+  Opis: Jako administrator chcę mieć logi błędów generowania, aby analizować problemy i poprawiać stabilność systemu.
+  Kryteria akceptacji:
+  - Każdy błąd podczas generowania jest zapisywany w tabeli generation_error_logs
+  - Log zawiera: typ błędu, komunikat, użyty model, długość i hash tekstu źródłowego, ID użytkownika, timestamp
+  - Logi są dostępne dla administratora systemu
 
 - ID: US-006
   Tytuł: Przegląd kandydatów
@@ -87,6 +110,7 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   Opis: Jako użytkownik chcę ręcznie dodać fiszkę przez formularz z polami "przód" i "tył", aby dodać własne treści.
   Kryteria akceptacji:
   - Formularz manualnego dodawania zawiera oba pola
+  - Walidacja długości pól jest konieczna: maks. 200 znaków "przód", 500 znaków "tył"
   - Po wypełnieniu i wysłaniu fiszka pojawia się w kolekcji
 
 - ID: US-008

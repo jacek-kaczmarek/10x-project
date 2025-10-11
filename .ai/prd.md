@@ -3,8 +3,10 @@
 ## 1. Przegląd produktu
 
 10x Cards to aplikacja webowa skierowana do studentów, umożliwiająca szybkie tworzenie i zarządzanie fiszkami edukacyjnymi. Użytkownik może:
-- generować fiszki przez AI na podstawie wklejonego tekstu (1000–10000 znaków)
-- ręcznie tworzyć pojedyncze fiszki
+- generować kandydatów fiszek przez AI na podstawie wklejonego tekstu (1000–10000 znaków)
+- edytować wygenerowane kandydaty po stronie klienta przed zapisaniem
+- zapisywać kolekcje fiszek z oznaczeniem źródła (AI, AI-edytowane, manualne)
+- ręcznie tworzyć pojedyncze fiszki lub całe kolekcje
 - przeglądać, edytować i usuwać fiszki w swojej kolekcji
 - odbywać sesje powtórek oparte na zewnętrznej bibliotece spaced repetition
 
@@ -17,18 +19,20 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
 ## 3. Wymagania funkcjonalne
 
 - Uwierzytelnianie: rejestracja, logowanie i zarządzanie sesją użytkownika
-- Generowanie fiszek AI: pole tekstowe (1000–10000 znaków), stała liczba 10 fiszek, pasek postępu z procentami oraz komunikat "Trwa generowanie"
-- Przegląd kandydatów: lista propozycji z akcjami akceptuj, edytuj, odrzuć; zapisanie zaakceptowanych do kolekcji
-- Śledzenie generacji: każda akcja generowania AI tworzy obiekt generacji grupujący wygenerowane fiszki; zawiera: czas generacji, użyty model AI, długość i hash źródłowego tekstu, identyfikator użytkownika
+- Generowanie kandydatów AI: pole tekstowe (1000–10000 znaków), stała liczba 10 kandydatów, pasek postępu z procentami oraz komunikat "Trwa generowanie"
+- Edycja kandydatów: możliwość edycji wygenerowanych kandydatów po stronie klienta przed zapisaniem kolekcji
+- Zapisywanie kolekcji: zapisanie edytowanych kandydatów jako kolekcji z automatycznym oznaczeniem źródła (AI, AI-edytowane, manualne)
+- Śledzenie generacji: każda zapisana kolekcja z AI tworzy obiekt generacji; zawiera: czas zapisania, użyty model AI, długość i hash źródłowego tekstu, identyfikator użytkownika
 - Logowanie błędów generacji: błędy podczas generowania AI są zapisywane w systemie (generation_error_logs) z informacjami: typ błędu, komunikat, użyty model, długość i hash tekstu, identyfikator użytkownika
-- Niezależne fiszki: fiszki mogą istnieć poza generacjami (np. tworzone ręcznie lub zaakceptowane kandydaty)
-- Ręczne dodawanie fiszek: formularz z polami "przód" (maks. 200 znaków) i "tył" (maks. 500 znaków)
+- Niezależne fiszki: fiszki mogą istnieć poza generacjami (np. tworzone ręcznie)
+- Ręczne dodawanie fiszek: formularz z polami "przód" (maks. 200 znaków) i "tył" (maks. 500 znaków), możliwość tworzenia pojedynczych fiszek lub kolekcji
 - Zarządzanie kolekcją: widok z paginacją i wyszukiwaniem, możliwość edycji i usuwania fiszek
 - Integracja modułu powtórek: sesje nauki oparte na bibliotece open source, wywoływane z poziomu kolekcji
 - Obsługa pustych stanów: widoczny przycisk zachęcający do głównej akcji w przypadku braku danych
 - Walidacja wejścia: długość tekstu do generowania 1000–10000 znaków, komunikaty błędów
 - Ikony informacyjne: tooltipy z krótkim opisem funkcji pod ikoną "i"
 - Konfigurowalne limity API: stałe wartości definiowane po stronie systemu
+- Oznaczanie źródła fiszek: system automatycznie śledzi czy fiszka pochodzi z AI, została edytowana, czy utworzona ręcznie
 
 ## 4. Granice produktu
 
@@ -66,12 +70,12 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   - Użytkownik zostaje przekierowany na stronę logowania
 
 - ID: US-004
-  Tytuł: Generowanie fiszek AI
-  Opis: Jako użytkownik chcę wkleić tekst (1000–10000 znaków) i wygenerować 10 fiszek AI, aby szybko tworzyć materiały do nauki.
+  Tytuł: Generowanie kandydatów fiszek AI
+  Opis: Jako użytkownik chcę wkleić tekst (1000–10000 znaków) i wygenerować 10 kandydatów fiszek AI, aby szybko otrzymać propozycje do edycji.
   Kryteria akceptacji:
   - Walidacja długości tekstu (min i max)
   - Po uruchomieniu wyświetlany jest pasek postępu z procentami i tekstem "Trwa generowanie"
-  - Po zakończeniu wyświetla się lista propozycji fiszek
+  - Po zakończeniu wyświetla się lista kandydatów do edycji (nie są jeszcze zapisane)
 
 - ID: US-005
   Tytuł: Obsługa błędów generowania
@@ -98,20 +102,29 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   - Logi są dostępne dla administratora systemu
 
 - ID: US-006
-  Tytuł: Przegląd kandydatów
-  Opis: Jako użytkownik chcę przeglądać wygenerowane propozycje i akceptować, edytować lub odrzucać każdą z nich, aby utrzymać jakość kolekcji.
+  Tytuł: Edycja kandydatów fiszek
+  Opis: Jako użytkownik chcę edytować wygenerowane kandydaty fiszek po stronie klienta przed zapisaniem, aby dostosować je do moich potrzeb.
   Kryteria akceptacji:
-  - Lista kandydatów zawiera opcje akceptuj, edytuj, odrzuć przy każdej fiszce
-  - Akceptowane fiszki trafiają do kolekcji po zakończeniu przeglądu
-  - Odrzucone są usuwane na zawsze
+  - Lista kandydatów umożliwia edycję tekstu przód i tył każdej fiszki
+  - Możliwość usunięcia niepożądanych kandydatów z listy
+  - Zmiany są zachowywane lokalnie do momentu zapisania kolekcji
+
+- ID: US-006A
+  Tytuł: Zapisywanie kolekcji fiszek
+  Opis: Jako użytkownik chcę zapisać edytowaną kolekcję fiszek do bazy danych z odpowiednim oznaczeniem źródła.
+  Kryteria akceptacji:
+  - Przycisk "Zapisz kolekcję" zapisuje wszystkie fiszki do bazy danych
+  - System automatycznie oznacza źródło: 'ai' (niezmienione), 'ai-edited' (edytowane), 'manual' (ręczne)
+  - Po zapisaniu użytkownik zostaje przekierowany do widoku kolekcji
 
 - ID: US-007
   Tytuł: Ręczne dodawanie fiszek
-  Opis: Jako użytkownik chcę ręcznie dodać fiszkę przez formularz z polami "przód" i "tył", aby dodać własne treści.
+  Opis: Jako użytkownik chcę ręcznie dodać fiszki przez formularz z polami "przód" i "tył", aby dodać własne treści.
   Kryteria akceptacji:
   - Formularz manualnego dodawania zawiera oba pola
   - Walidacja długości pól jest konieczna: maks. 200 znaków "przód", 500 znaków "tył"
-  - Po wypełnieniu i wysłaniu fiszka pojawia się w kolekcji
+  - Możliwość dodania pojedynczej fiszki lub utworzenia kolekcji fiszek
+  - Po wypełnieniu i wysłaniu fiszki pojawiają się w kolekcji z oznaczeniem 'manual'
 
 - ID: US-008
   Tytuł: Wyświetlanie kolekcji

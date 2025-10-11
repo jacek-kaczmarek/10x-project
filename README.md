@@ -17,9 +17,10 @@
 ## Project Description
 
 10x Cards empowers learners to generate high-quality flashcards in seconds, either by:
-- Pasting 1,000–10,000 characters of text to auto-generate 10 AI-powered flashcards (with progress feedback).
-- Manually creating custom flashcards (front/back).
-- Reviewing, editing, and accepting or rejecting AI candidates before saving.
+- Pasting 1,000–10,000 characters of text to auto-generate 10 AI-powered flashcard candidates (with progress feedback).
+- Editing generated candidates on the client-side before saving collections.
+- Manually creating custom flashcards (front/back) individually or as collections.
+- Saving flashcard collections with automatic source tracking (AI, AI-edited, manual).
 - Managing collections with pagination, search, edit, and delete.
 - Launching spaced-repetition study sessions via an integrated open-source library.
 
@@ -109,9 +110,10 @@ Open your browser at `http://localhost:3000` (default Astro port).
 ### Features
 
 - User authentication (register, login, logout)  
-- AI flashcard generation (input validation, progress bar)  
-- Candidate review with accept/edit/reject  
-- Manual flashcard creation (front/back)  
+- AI flashcard candidate generation (input validation, progress bar)  
+- Client-side editing of AI-generated candidates  
+- Collection saving with source tracking (AI, AI-edited, manual)  
+- Manual flashcard creation (individual or batch)  
 - Collection management: pagination, search, edit, delete  
 - Spaced-repetition study sessions  
 - Input validation & clear error messaging  

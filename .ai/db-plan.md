@@ -65,8 +65,9 @@ CREATE TYPE flashcard_status AS ENUM (
 #### flashcard_source
 ```sql
 CREATE TYPE flashcard_source AS ENUM (
-    'manual',  -- Fiszka utworzona ręcznie przez użytkownika
-    'ai'       -- Fiszka wygenerowana przez AI
+    'manual',     -- Fiszka utworzona ręcznie przez użytkownika
+    'ai',         -- Fiszka wygenerowana przez AI (niezmieniona)
+    'ai-edited'   -- Fiszka wygenerowana przez AI i edytowana przez użytkownika
 );
 ```
 
@@ -271,6 +272,17 @@ Przy zmianie statusu fiszki z `candidate` na `active`, aplikacja powinna ustawi�
 ### 6.2 Obsługa statusu 'rejected'
 Fiszki ze statusem `rejected` mogą być przechowywane tymczasowo (np. 30 dni) przed ostatecznym usunięciem, lub usuwane natychmiast w zależności od implementacji. Na etapie MVP proponowane jest natychmiastowe usuwanie (hard delete) odrzuconych kandydatów.
 
+**Nowy flow generacji (z zapisem po stronie serwera):**
+1. POST `/generations` z tekstem źródłowym
+2. Serwer generuje fiszki przez AI i zapisuje je do bazy jako kandydaci (status='candidate', source='ai')
+3. Serwer tworzy rekord w tabeli `generations` i powiązuje fiszki przez `generation_id`
+4. Fiszki są zwracane do klienta do edycji
+5. Klient może edytować fiszki lokalnie i wysłać aktualizacje:
+   - Edycja treści (front/back) → source zmienia się na 'ai-edited'
+   - Odrzucenie → status='rejected' lub hard delete
+   - Akceptacja → status='active' (wraz z inicjalizacją parametrów SR)
+6. Fiszki manualne tworzone są bezpośrednio z status='active', source='manual', generation_id=NULL
+
 ### 6.3 Wyszukiwanie tekstowe
 Na etapie MVP wyszukiwanie będzie realizowane za pomocą prostego zapytania:
 ```sql
@@ -292,7 +304,12 @@ LIMIT $2 OFFSET $3;
 Kolumny `due_date`, `interval`, `ease_factor` i `repetitions` są zaprojektowane do obsługi algorytmu SuperMemo 2 (SM-2) lub podobnych. Biblioteka frontend'owa (np. `ts-fsrs`) będzie obliczać wartości, a backend zapisuje je w bazie.
 
 ### 6.6 Metryki i analityka
-Kolumna `source` w tabeli `flashcards` pozwala na śledzenie, ile fiszek pochodzi z AI vs. manualnego tworzenia, co jest kluczowe dla metryki sukcesu: "75% fiszek w kolekcji pochodzi z generowania AI".
+Kolumna `source` w tabeli `flashcards` pozwala na śledzenie pochodzenia fiszek:
+- `'ai'` - wygenerowane przez AI i niezmodyfikowane
+- `'ai-edited'` - wygenerowane przez AI i edytowane przez użytkownika
+- `'manual'` - utworzone ręcznie przez użytkownika
+
+Dla metryki sukcesu "75% fiszek w kolekcji pochodzi z generowania AI" zliczamy fiszki z source='ai' OR source='ai-edited'.
 
 Tabela `generations` umożliwia analizę:
 - Częstotliwości generowania fiszek przez użytkowników
@@ -306,6 +323,13 @@ Każda akcja generowania fiszek przez AI tworzy rekord w tabeli `generations`, k
 - Przechowuje metadane generacji: model AI, długość i hash tekstu źródłowego
 - Pozwala na audyt i analizę procesu generowania
 - Umożliwia przyszłe funkcje jak "pokaż wszystkie fiszki z tej generacji"
+
+**Proces tworzenia generacji:**
+1. Endpoint POST `/generations` otrzymuje tekst źródłowy
+2. Tworzy rekord w tabeli `generations` z metadanymi
+3. Generuje fiszki przez AI i zapisuje je z powiązaniem do `generation_id`
+4. Aktualizuje licznik `flashcards_generated` w rekordzie generacji
+5. Zwraca fiszki do klienta jako kandydaci (status='candidate', source='ai')
 
 Fiszki ręczne nie są powiązane z żadną generacją (`generation_id` = NULL), co pozwala na ich niezależne istnienie.
 

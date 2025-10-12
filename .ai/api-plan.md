@@ -87,167 +87,6 @@ The API follows RESTful principles.
 
 ---
 
-#### Generate AI Flashcards
-
-**Endpoint:** `POST /api/flashcards/generate`
-
-**Description:** Generates 10 flashcard candidates from source text using AI and returns them for client-side editing
-
-**Request Body:**
-```json
-{
-  "source_text": "Long educational text content here..."
-}
-```
-
-**Request Body Schema:**
-| Field | Type | Required | Constraints |
-|-------|------|----------|-------------|
-| `source_text` | string | Yes | 1000-10000 characters |
-
-**Success Response:**
-- **Code:** `200 OK`
-- **Body:**
-```json
-{
-  "source_text_hash": "sha256_hash_here",
-  "source_text_length": 5432,
-  "model": "gpt-4o-mini",
-  "flashcards": [
-    {
-      "front": "What is photosynthesis?",
-      "back": "The process by which plants convert light energy into chemical energy"
-    }
-    // ... 9 more flashcards
-  ]
-}
-```
-
-**Error Responses:**
-- **Code:** `400 Bad Request`
-  - Message: "Source text must be between 1000 and 10000 characters"
-- **Code:** `502 Bad Gateway`
-  - Message: "AI service unavailable"
-- **Code:** `500 Internal Server Error`
-  - Message: "Failed to generate flashcards"
-
-**Business Logic:**
-1. Validate source_text length (1000-10000 chars)
-2. Calculate SHA-256 hash of source_text
-3. Call OpenRouter API with source text and server-configured model
-4. Parse AI response into 10 flashcard objects
-5. On error: create generation_error_log record
-6. Return flashcard data for client-side editing (no database save yet)
-
-**Processing Notes:**
-- Frontend should show progress indicator during generation
-- Generation typically takes 10-30 seconds
-- Flashcards are returned for client-side editing before saving
-- No database records created until user saves the collection
-
----
-
-#### Save Flashcard Collection
-
-**Endpoint:** `POST /api/flashcards/collections`
-
-**Description:** Saves a collection of flashcards (from AI generation or manual creation) to the database
-
-**Request Body:**
-```json
-{
-  "source_text_hash": "sha256_hash_here",
-  "source_text_length": 5432,
-  "model": "gpt-4o-mini",
-  "flashcards": [
-    {
-      "front": "What is photosynthesis?",
-      "back": "The process by which plants convert light energy into chemical energy",
-      "source": "ai"
-    },
-    {
-      "front": "What is cellular respiration?",
-      "back": "The process that breaks down glucose to release energy",
-      "source": "ai-edited"
-    },
-    {
-      "front": "What is ATP?",
-      "back": "Adenosine triphosphate - the energy currency of cells",
-      "source": "manual"
-    }
-  ]
-}
-```
-
-**Request Body Schema:**
-| Field | Type | Required | Constraints |
-|-------|------|----------|-------------|
-| `source_text_hash` | string | No | SHA-256 hash (required for AI generations) |
-| `source_text_length` | integer | No | 1000-10000 (required for AI generations) |
-| `model` | string | No | AI model used (required for AI generations) |
-| `flashcards` | array | Yes | 1-50 flashcard objects |
-| `flashcards[].front` | string | Yes | 1-200 characters, non-empty |
-| `flashcards[].back` | string | Yes | 1-500 characters, non-empty |
-| `flashcards[].source` | string | Yes | 'manual', 'ai', or 'ai-edited' |
-
-**Success Response:**
-- **Code:** `201 Created`
-- **Body:**
-```json
-{
-  "generation_id": "uuid",
-  "model": "gpt-4o-mini",
-  "source_text_length": 5432,
-  "flashcards_saved": 3,
-  "created_at": "2025-10-11T12:00:00Z",
-  "flashcards": [
-    {
-      "id": "uuid",
-      "user_id": "uuid",
-      "generation_id": "uuid",
-      "front": "What is photosynthesis?",
-      "back": "The process by which plants convert light energy into chemical energy",
-      "status": "active",
-      "source": "ai",
-      "due_date": "2025-10-11T12:00:00Z",
-      "interval": 0,
-      "ease_factor": 2.5,
-      "repetitions": 0,
-      "created_at": "2025-10-11T12:00:00Z",
-      "updated_at": "2025-10-11T12:00:00Z"
-    }
-    // ... more saved flashcards
-  ]
-}
-```
-
-**Error Responses:**
-- **Code:** `400 Bad Request`
-  - Message: "At least one flashcard is required"
-  - Message: "Maximum 50 flashcards per collection"
-  - Message: "Front text must be between 1 and 200 characters"
-  - Message: "Back text must be between 1 and 500 characters"
-  - Message: "Invalid source value"
-  - Message: "Source text hash required for AI generations"
-- **Code:** `500 Internal Server Error`
-  - Message: "Failed to save flashcard collection"
-
-**Business Logic:**
-1. Validate flashcard array (1-50 items)
-2. Validate each flashcard (front, back, source)
-3. For AI generations: create generation record with metadata
-4. For manual collections: skip generation record
-5. Insert all flashcards with status='active' and initialized SR parameters
-6. Update generation.flashcards_generated count (if applicable)
-7. Return saved collection with generated IDs
-
-**Use Cases:**
-- Save AI-generated flashcards after client-side editing
-- Save manually created flashcard collections
-- Mix of AI, AI-edited, and manual flashcards in one collection
-
----
-
 #### List Flashcards
 
 **Endpoint:** `GET /api/flashcards`
@@ -371,7 +210,7 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
 
 **Endpoint:** `PATCH /api/flashcards/:id`
 
-**Description:** Updates flashcard content, status, or spaced repetition parameters
+**Description:** Updates flashcard content, status, source, or spaced repetition parameters
 
 **URL Parameters:**
 | Parameter | Type | Description |
@@ -384,6 +223,7 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
   "front": "Updated question text",
   "back": "Updated answer text",
   "status": "active",
+  "source": "ai-edited",
   "due_date": "2025-10-15T12:00:00Z",
   "interval": 4,
   "ease_factor": 2.7,
@@ -397,6 +237,7 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
 | `front` | string | No | 1-200 characters if provided |
 | `back` | string | No | 1-500 characters if provided |
 | `status` | string | No | 'candidate', 'active', or 'rejected' |
+| `source` | string | No | 'manual', 'ai', or 'ai-edited' |
 | `due_date` | string (ISO 8601) | No | Valid datetime |
 | `interval` | integer | No | >= 0 |
 | `ease_factor` | number | No | >= 1.3 |
@@ -413,7 +254,7 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
   "front": "Updated question text",
   "back": "Updated answer text",
   "status": "active",
-  "source": "ai",
+  "source": "ai-edited",
   "due_date": "2025-10-15T12:00:00Z",
   "interval": 4,
   "ease_factor": 2.7,
@@ -428,6 +269,7 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
   - Message: "Front text must be between 1 and 200 characters"
   - Message: "Back text must be between 1 and 500 characters"
   - Message: "Invalid status value"
+  - Message: "Invalid source value"
   - Message: "Interval must be >= 0"
   - Message: "Ease factor must be >= 1.3"
   - Message: "Repetitions must be >= 0"
@@ -437,14 +279,17 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
 **Business Logic:**
 1. Verify flashcard exists
 2. Validate provided fields against constraints
-3. Update only provided fields (partial update)
-4. updated_at automatically updated by database trigger
-5. Return updated flashcard
+3. If status changes to 'active' and SR params not provided, initialize them (due_date=NOW(), interval=0, ease_factor=2.5, repetitions=0)
+4. If front or back text changes and source='ai', automatically change source to 'ai-edited'
+5. Update only provided fields (partial update)
+6. updated_at automatically updated by database trigger
+7. Return updated flashcard
 
 **Use Cases:**
+- **Editing AI candidate content:** PATCH candidate flashcard with new front/back (auto-change source to 'ai-edited')
+- **Accepting candidate:** PATCH with status='active' (initializes SR parameters)
 - **Updating SR after review:** PATCH with new due_date, interval, ease_factor, repetitions calculated by frontend SR library
-- **Editing content:** PATCH with new front/back text
-- **Changing source:** PATCH to mark as 'ai-edited' if user modifies AI-generated content
+- **Manual source change:** Explicitly PATCH source field if needed
 
 ---
 
@@ -479,6 +324,85 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
 ---
 
 ### 4.2 Generation Management
+
+#### Create Generation with AI Flashcards
+
+**Endpoint:** `POST /api/generations`
+
+**Description:** Generates 10 flashcard candidates from source text using AI, saves them to the database as candidates with a generation record, and returns them for editing
+
+**Request Body:**
+```json
+{
+  "source_text": "Long educational text content here..."
+}
+```
+
+**Request Body Schema:**
+| Field | Type | Required | Constraints |
+|-------|------|----------|-------------|
+| `source_text` | string | Yes | 1000-10000 characters |
+
+**Success Response:**
+- **Code:** `201 Created`
+- **Body:**
+```json
+{
+  "generation_id": "uuid",
+  "model": "gpt-4o-mini",
+  "source_text_length": 5432,
+  "source_text_hash": "sha256_hash_here",
+  "flashcards_generated": 10,
+  "created_at": "2025-10-11T12:00:00Z",
+  "flashcards": [
+    {
+      "id": "uuid",
+      "user_id": "uuid",
+      "generation_id": "uuid",
+      "front": "What is photosynthesis?",
+      "back": "The process by which plants convert light energy into chemical energy",
+      "status": "candidate",
+      "source": "ai",
+      "due_date": null,
+      "interval": null,
+      "ease_factor": null,
+      "repetitions": null,
+      "created_at": "2025-10-11T12:00:00Z",
+      "updated_at": "2025-10-11T12:00:00Z"
+    }
+    // ... 9 more flashcards
+  ]
+}
+```
+
+**Error Responses:**
+- **Code:** `400 Bad Request`
+  - Message: "Source text must be between 1000 and 10000 characters"
+- **Code:** `502 Bad Gateway`
+  - Message: "AI service unavailable"
+- **Code:** `500 Internal Server Error`
+  - Message: "Failed to generate flashcards"
+
+**Business Logic:**
+1. Validate source_text length (1000-10000 chars)
+2. Calculate SHA-256 hash of source_text
+3. Call OpenRouter API with source text and server-configured model
+4. Parse AI response into 10 flashcard objects
+5. Create generation record in database
+6. Save all 10 flashcards to database with status='candidate', source='ai', generation_id set
+7. SR parameters remain NULL for candidates (will be initialized when status changes to 'active')
+8. On error: create generation_error_log record and return error
+9. Return generation metadata with saved candidate flashcards
+
+**Processing Notes:**
+- Frontend should show progress indicator during generation
+- Generation typically takes 10-30 seconds
+- Flashcards are immediately saved to database as candidates
+- User can edit candidates using PATCH /api/flashcards/:id
+- User can delete unwanted candidates using DELETE /api/flashcards/:id
+- User activates candidates by PATCH with status='active'
+
+---
 
 #### List Generations
 
@@ -687,9 +611,9 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
 
 ### 5.2 Business Logic Implementation
 
-#### BL-1: AI Flashcard Generation Flow
+#### BL-1: AI Generation with Database Save
 
-**Trigger:** POST `/api/flashcards/generate`
+**Trigger:** POST `/api/generations`
 
 **Steps:**
 1. **Validate Input**
@@ -707,13 +631,33 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
    - Validate response structure
    - Extract 10 flashcard objects
    - Validate each flashcard (front/back length)
-   - If validation fails, create error log
+   - If validation fails, create error log and return error
 
-4. **Return Response**
+4. **Save to Database (Transaction)**
    - Calculate SHA-256 hash of source_text
-   - Return flashcard data for client-side editing
-   - Include metadata (hash, length, model) for later saving
-   - Status 200 OK
+   - Create generation record:
+     ```sql
+     INSERT INTO generations (
+       model, source_text_length, source_text_hash, flashcards_generated
+     ) VALUES ($model, $length, $hash, 10)
+     RETURNING id
+     ```
+   - Batch insert all 10 flashcards as candidates:
+     ```sql
+     INSERT INTO flashcards (
+       generation_id, front, back, source, status,
+       due_date, interval, ease_factor, repetitions
+     ) VALUES (
+       $generation_id, $front, $back, 'ai', 'candidate',
+       NULL, NULL, NULL, NULL
+     )
+     RETURNING *
+     ```
+
+5. **Return Response**
+   - Status 201 Created
+   - Include generation metadata
+   - Include all saved candidate flashcards with IDs
 
 **Error Handling:**
 - On any error, create error log:
@@ -723,50 +667,14 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
     source_text_length, source_text_hash
   ) VALUES (...)
   ```
+- Rollback transaction if database save fails
 - Return appropriate error response to user
 
-**Note:** No database records created until user saves via `/api/flashcards/collections`
+**Note:** Flashcards are immediately saved as candidates. User edits them via PATCH and activates via status change.
 
 ---
 
-#### BL-2: Save Flashcard Collection
-
-**Trigger:** POST `/api/flashcards/collections`
-
-**Steps:**
-1. **Validate Input**
-   - Check flashcards array (1-50 items)
-   - Validate each flashcard (front, back, source)
-   - Validate generation metadata if provided
-
-2. **Create Generation Record (if AI-based)**
-   - If source_text_hash provided, create generation:
-     ```sql
-     INSERT INTO generations (
-       model, source_text_length, source_text_hash, flashcards_generated
-     ) VALUES ($model, $length, $hash, $count)
-     RETURNING id
-     ```
-
-3. **Insert Flashcards**
-   - Batch insert all flashcards with status='active':
-     ```sql
-     INSERT INTO flashcards (
-       generation_id, front, back, source, status,
-       due_date, interval, ease_factor, repetitions
-     ) VALUES (
-       $generation_id, $front, $back, $source, 'active',
-       NOW(), 0, 2.5, 0
-     )
-     ```
-
-4. **Return Saved Collection**
-   - Include generation_id (if applicable)
-   - Include all saved flashcards with IDs
-
----
-
-#### BL-3: Manual Flashcard Creation
+#### BL-2: Manual Flashcard Creation
 
 **Trigger:** POST `/api/flashcards`
 
@@ -789,7 +697,39 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
 3. **Return Created Flashcard**
    - Status 201 Created
 
-**Note:** Individual manual flashcards can also be created as part of a collection via `/api/flashcards/collections`
+---
+
+#### BL-3: Edit Candidate Flashcard
+
+**Trigger:** PATCH `/api/flashcards/:id` (for candidate flashcards)
+
+**Steps:**
+1. **Validate Input**
+   - Verify flashcard exists and user has access
+   - Validate provided fields (front, back, etc.)
+
+2. **Update Flashcard**
+   - If front or back changed and source='ai', automatically set source='ai-edited'
+   - If status changed to 'active' and SR params not provided, initialize them:
+     ```sql
+     UPDATE flashcards SET
+       front = COALESCE($front, front),
+       back = COALESCE($back, back),
+       source = CASE 
+         WHEN ($front IS NOT NULL OR $back IS NOT NULL) AND source = 'ai' 
+         THEN 'ai-edited' 
+         ELSE source 
+       END,
+       status = COALESCE($status, status),
+       due_date = CASE WHEN $status = 'active' AND due_date IS NULL THEN NOW() ELSE due_date END,
+       interval = CASE WHEN $status = 'active' AND interval IS NULL THEN 0 ELSE interval END,
+       ease_factor = CASE WHEN $status = 'active' AND ease_factor IS NULL THEN 2.5 ELSE ease_factor END,
+       repetitions = CASE WHEN $status = 'active' AND repetitions IS NULL THEN 0 ELSE repetitions END
+     WHERE id = $id
+     RETURNING *
+     ```
+
+3. **Return Updated Flashcard**
 
 ---
 
@@ -1058,8 +998,8 @@ These can be added without versioning:
 ### 10.1 JavaScript/TypeScript (Frontend)
 
 ```typescript
-// Generate flashcard candidates
-const response = await fetch('/api/flashcards/generate', {
+// Generate flashcard candidates (saves to DB immediately)
+const response = await fetch('/api/generations', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -1070,30 +1010,43 @@ const response = await fetch('/api/flashcards/generate', {
 })
 
 const generation = await response.json()
-// Returns: { source_text_hash, source_text_length, model, flashcards: [...] }
+// Returns: { generation_id, model, source_text_hash, flashcards_generated, created_at, flashcards: [...] }
+// Flashcards are already saved as candidates in DB
 
-// User edits flashcards on client, then saves collection
-const editedFlashcards = generation.flashcards.map(card => ({
-  front: card.front, // possibly edited
-  back: card.back,   // possibly edited
-  source: card.front !== originalCard.front || card.back !== originalCard.back ? 'ai-edited' : 'ai'
-}))
-
-// Save the collection
-const saveResponse = await fetch('/api/flashcards/collections', {
-  method: 'POST',
+// Edit a candidate flashcard
+await fetch(`/api/flashcards/${candidateId}`, {
+  method: 'PATCH',
   headers: {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    source_text_hash: generation.source_text_hash,
-    source_text_length: generation.source_text_length,
-    model: generation.model,
-    flashcards: editedFlashcards
+    front: "Edited question",
+    back: "Edited answer"
+    // source automatically changes to 'ai-edited' if content changed
   })
 })
 
-const savedCollection = await saveResponse.json()
+// Accept a candidate (activate it)
+await fetch(`/api/flashcards/${candidateId}`, {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    status: 'active'
+    // SR parameters automatically initialized
+  })
+})
+
+// Reject a candidate (delete it)
+await fetch(`/api/flashcards/${candidateId}`, {
+  method: 'DELETE'
+})
+
+// List candidate flashcards from a generation
+const candidates = await fetch(
+  `/api/flashcards?generation_id=${generationId}&status=candidate`
+).then(r => r.json())
 
 // List active flashcards
 const flashcards = await fetch(
@@ -1114,20 +1067,15 @@ await fetch(`/api/flashcards/${flashcardId}`, {
   })
 })
 
-// Create manual flashcard collection
-await fetch('/api/flashcards/collections', {
+// Create manual flashcard
+await fetch('/api/flashcards', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    flashcards: [
-      {
-        front: "What is the capital of France?",
-        back: "Paris",
-        source: "manual"
-      }
-    ]
+    front: "What is the capital of France?",
+    back: "Paris"
   })
 })
 ```
@@ -1135,54 +1083,41 @@ await fetch('/api/flashcards/collections', {
 ### 10.2 cURL Examples
 
 ```bash
-# Generate flashcard candidates
-curl -X POST https://app.10xcards.com/api/flashcards/generate \
+# Generate flashcard candidates (saves to DB immediately)
+curl -X POST https://app.10xcards.com/api/generations \
   -H "Content-Type: application/json" \
   -d '{
     "source_text": "Long educational text..."
   }'
 
-# Save AI-generated collection (after client-side editing)
-curl -X POST https://app.10xcards.com/api/flashcards/collections \
+# Edit a candidate flashcard
+curl -X PATCH https://app.10xcards.com/api/flashcards/<candidate-id> \
   -H "Content-Type: application/json" \
   -d '{
-    "source_text_hash": "sha256_hash_here",
-    "source_text_length": 5432,
-    "model": "gpt-4o-mini",
-    "flashcards": [
-      {
-        "front": "What is photosynthesis?",
-        "back": "The process by which plants convert light energy into chemical energy",
-        "source": "ai"
-      },
-      {
-        "front": "What is cellular respiration?",
-        "back": "Process that breaks down glucose to release energy",
-        "source": "ai-edited"
-      }
-    ]
+    "front": "Edited question",
+    "back": "Edited answer"
   }'
 
-# Create manual flashcard collection
-curl -X POST https://app.10xcards.com/api/flashcards/collections \
+# Accept a candidate (activate it)
+curl -X PATCH https://app.10xcards.com/api/flashcards/<candidate-id> \
   -H "Content-Type: application/json" \
   -d '{
-    "flashcards": [
-      {
-        "front": "What is the capital of France?",
-        "back": "Paris",
-        "source": "manual"
-      }
-    ]
+    "status": "active"
   }'
 
-# Create individual manual flashcard
+# Reject a candidate (delete it)
+curl -X DELETE https://app.10xcards.com/api/flashcards/<candidate-id>
+
+# Create manual flashcard
 curl -X POST https://app.10xcards.com/api/flashcards \
   -H "Content-Type: application/json" \
   -d '{
     "front": "What is the capital of France?",
     "back": "Paris"
   }'
+
+# List candidate flashcards from a generation
+curl -X GET "https://app.10xcards.com/api/flashcards?generation_id=<gen-id>&status=candidate"
 
 # List flashcards with search
 curl -X GET "https://app.10xcards.com/api/flashcards?status=active&search=physics&page=1&limit=20"
@@ -1201,11 +1136,9 @@ curl -X DELETE https://app.10xcards.com/api/flashcards/<id>
 src/pages/api/
 ├── flashcards/
 │   ├── index.ts          # GET (list), POST (create manual)
-│   ├── [id].ts           # GET, PATCH, DELETE single flashcard
-│   ├── generate.ts       # POST (AI generation - returns candidates)
-│   └── collections.ts    # POST (save collection of flashcards)
+│   └── [id].ts           # GET, PATCH, DELETE single flashcard
 ├── generations/
-│   ├── index.ts          # GET (list)
+│   ├── index.ts          # GET (list), POST (generate AI + save)
 │   └── [id].ts           # GET single generation
 └── error-logs/
     └── index.ts          # GET (list)
@@ -1322,14 +1255,52 @@ export const POST: APIRoute = async ({ locals, request }) => {
     // Parse and validate AI response
     const flashcards = parseFlashcardsFromAI(aiResult)
     
-    // Return candidates for client-side editing
+    // Save to database (transaction)
+    // Create generation record
+    const { data: generation, error: genError } = await supabase
+      .from('generations')
+      .insert({
+        model,
+        source_text_length: source_text.length,
+        source_text_hash: hash,
+        flashcards_generated: 10
+      })
+      .select()
+      .single()
+    
+    if (genError) throw genError
+    
+    // Save flashcards as candidates
+    const flashcardsToInsert = flashcards.map(card => ({
+      generation_id: generation.id,
+      front: card.front,
+      back: card.back,
+      source: 'ai',
+      status: 'candidate',
+      due_date: null,
+      interval: null,
+      ease_factor: null,
+      repetitions: null
+    }))
+    
+    const { data: savedFlashcards, error: flashcardsError } = await supabase
+      .from('flashcards')
+      .insert(flashcardsToInsert)
+      .select()
+    
+    if (flashcardsError) throw flashcardsError
+    
+    // Return saved generation with flashcards
     return new Response(JSON.stringify({
-      source_text_hash: hash,
-      source_text_length: source_text.length,
-      model,
-      flashcards
+      generation_id: generation.id,
+      model: generation.model,
+      source_text_length: generation.source_text_length,
+      source_text_hash: generation.source_text_hash,
+      flashcards_generated: generation.flashcards_generated,
+      created_at: generation.created_at,
+      flashcards: savedFlashcards
     }), {
-      status: 200,
+      status: 201,
       headers: { 'Content-Type': 'application/json' }
     })
     
@@ -1353,7 +1324,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
 }
 ```
 
-**Note:** No database records are created until the user saves the collection via `/api/flashcards/collections`. The `user_id` field will be properly set when authentication is implemented.
+**Note:** Flashcards are immediately saved to the database as candidates. User can then edit them via PATCH `/api/flashcards/:id` and activate them by changing status to 'active'. The `user_id` field will be properly set when authentication is implemented.
 
 ---
 
@@ -1361,28 +1332,38 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
 This REST API provides a complete backend for the 10x Cards MVP application with:
 
-- **9 main endpoints** covering all user stories from the PRD
+- **8 main endpoints** covering all user stories from the PRD
 - **RESTful design** following industry best practices
 - **Comprehensive validation** matching database constraints
 - **Proper error handling** with meaningful status codes and messages
 - **Performance optimization** via database indexes and efficient queries
 - **Scalable architecture** ready for future enhancements
 
-### Key API Flow Changes
+### Key API Flow
 
 **AI Generation Flow:**
-1. Generate candidates via `POST /api/flashcards/generate` (returns data, no DB save)
-2. User edits flashcards on client-side
-3. Save collection via `POST /api/flashcards/collections` with proper source tracking
+1. Generate and save candidates via `POST /api/generations` (saves to DB immediately as candidates)
+2. User edits candidates via `PATCH /api/flashcards/:id` (source auto-changes to 'ai-edited')
+3. User accepts candidates via `PATCH /api/flashcards/:id` with status='active' (SR params initialized)
+4. User rejects candidates via `DELETE /api/flashcards/:id`
+
+**Manual Flashcard Flow:**
+1. Create manual flashcard via `POST /api/flashcards` (immediately active)
 
 **Source Tracking:**
-- `'ai'` - Original AI-generated content
+- `'ai'` - Original AI-generated content (not edited)
 - `'ai-edited'` - AI content modified by user
 - `'manual'` - User-created content
+
+**Status Lifecycle:**
+- `'candidate'` - AI-generated, awaiting user review/edit/activation
+- `'active'` - Accepted flashcard, ready for spaced repetition
+- `'rejected'` - (Optional) Rejected flashcard before deletion
 
 **Current Phase:** Authentication is **not implemented**. All endpoints are publicly accessible for development purposes. 
 
 **Next Phase:** Supabase Auth integration with session-based authentication and Row-Level Security (RLS) policies will be added to secure the API and enforce proper data isolation between users.
 
 The API leverages Supabase's database capabilities while maintaining clean separation of concerns and enabling a smooth developer experience for frontend integration.
+
 

@@ -125,7 +125,7 @@ export interface ListErrorLogsResponseDTO {
 }
 
 // 20. Standard Error Response DTO
-export interface ErrorResponseDTO<Details = Record<string, any>> {
+export interface ErrorResponseDTO<Details = Record<string, unknown>> {
   error: {
     code: string;
     message: string;

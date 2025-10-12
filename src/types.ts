@@ -17,12 +17,18 @@ export type CreateManualFlashcardCommand = Pick<FlashcardInsert, "front" | "back
 // 2. Flashcard DTO (response)
 export type FlashcardDTO = FlashcardRow;
 
+// 2a. Flashcard Proposal DTO (raw AI-generated flashcard before saving)
+export interface FlashcardProposalDTO {
+  front: string;
+  back: string;
+}
+
 // 3. Create Generation with AI Flashcards Command (POST /api/generations)
 export interface CreateGenerationCommand {
   source_text: string;
 }
 
-// 4. Create Generation Response DTO (returns saved candidate flashcards)
+// 4. Create Generation Response DTO (returns flashcard proposals for client-side editing)
 export interface CreateGenerationResponseDTO {
   generation_id: string;
   model: string;
@@ -30,13 +36,29 @@ export interface CreateGenerationResponseDTO {
   source_text_hash: string;
   flashcards_generated: number;
   created_at: string;
-  flashcards: FlashcardDTO[];
+  proposals: FlashcardProposalDTO[]; // Raw proposals, not saved to DB yet
+}
+
+// 4a. Save Flashcard Proposals Command (POST /api/flashcards/batch)
+export interface SaveFlashcardProposalsCommand {
+  generation_id: string;
+  proposals: {
+    front: string;
+    back: string;
+    was_edited: boolean; // To determine if source should be 'ai' or 'ai-edited'
+  }[];
+}
+
+// 4b. Save Flashcard Proposals Response DTO
+export interface SaveFlashcardProposalsResponseDTO {
+  saved_count: number;
+  flashcards: FlashcardDTO[]; // Full saved flashcard records
 }
 
 // 5. List Flashcards Query Parameters DTO
 export interface ListFlashcardsQueryParamsDTO {
-  status?: "candidate" | "active" | "rejected" | "all";
-  source?: "manual" | "ai" | "all";
+  status?: "active" | "rejected" | "all"; // No 'candidate' - proposals exist only client-side
+  source?: "manual" | "ai" | "ai-edited" | "all";
   search?: string;
   due?: boolean;
   generation_id?: string;

@@ -21,12 +21,111 @@ The API follows RESTful principles.
 | Generations | `generations` | AI generation tracking records |
 | Error Logs | `generation_error_logs` | Error logs from failed AI generations |
 
+## 3. Data Type Conventions
 
-**Endpoints:** 
+Throughout this API plan, two important flashcard-related types are used:
+
+- **`FlashcardProposalDTO`** - Raw AI-generated flashcard with only `front` and `back` fields. Returned to client for editing, NOT saved to database immediately.
+- **`FlashcardDTO`** - Complete flashcard record from database, including `id`, `status`, `due_date`, `created_at`, and all other fields.
+
+**Flow:** 
+1. AI service generates `FlashcardProposalDTO[]` → returned to client
+2. User edits proposals on client-side
+3. User saves: `POST /api/flashcards/batch` with proposals → saved as `FlashcardDTO[]`
 
 ## 4. API Endpoints
 
 ### 4.1 Flashcard Management
+
+---
+
+#### Save Flashcard Proposals (Batch)
+
+**Endpoint:** `POST /api/flashcards/batch`
+
+**Description:** Saves multiple flashcard proposals from AI generation to the database as active flashcards with proper source tracking
+
+**Request Body:**
+```json
+{
+  "generation_id": "uuid",
+  "proposals": [
+    {
+      "front": "What is photosynthesis?",
+      "back": "The process by which plants convert light energy into chemical energy",
+      "was_edited": false
+    },
+    {
+      "front": "What is mitosis?",
+      "back": "Cell division resulting in two identical daughter cells",
+      "was_edited": true
+    }
+  ]
+}
+```
+
+**Request Body Schema:**
+| Field | Type | Required | Constraints |
+|-------|------|----------|-------------|
+| `generation_id` | uuid | Yes | Must reference existing generation |
+| `proposals` | array | Yes | 1-10 proposals |
+| `proposals[].front` | string | Yes | 1-200 characters, non-empty |
+| `proposals[].back` | string | Yes | 1-500 characters, non-empty |
+| `proposals[].was_edited` | boolean | Yes | Determines source: 'ai' or 'ai-edited' |
+
+**Success Response:**
+- **Code:** `201 Created`
+- **Body:**
+```json
+{
+  "saved_count": 10,
+  "flashcards": [
+    {
+      "id": "uuid",
+      "user_id": "uuid",
+      "generation_id": "uuid",
+      "front": "What is photosynthesis?",
+      "back": "The process by which plants convert light energy into chemical energy",
+      "status": "active",
+      "source": "ai",
+      "due_date": "2025-10-11T12:00:00Z",
+      "interval": 0,
+      "ease_factor": 2.5,
+      "repetitions": 0,
+      "created_at": "2025-10-11T12:00:00Z",
+      "updated_at": "2025-10-11T12:00:00Z"
+    }
+    // ... more flashcards
+  ]
+}
+```
+
+**Error Responses:**
+- **Code:** `400 Bad Request`
+  - Message: "Generation ID is required"
+  - Message: "Proposals array must contain 1-10 items"
+  - Message: "Front text must be between 1 and 200 characters"
+  - Message: "Back text must be between 1 and 500 characters"
+- **Code:** `404 Not Found`
+  - Message: "Generation not found"
+- **Code:** `500 Internal Server Error`
+  - Message: "Failed to save flashcards"
+
+**Business Logic:**
+1. Validate generation_id exists
+2. Validate proposals array (1-10 items)
+3. Validate each proposal (front 1-200 chars, back 1-500 chars)
+4. For each proposal:
+   - Set source = 'ai' if was_edited=false, 'ai-edited' if was_edited=true
+   - Set status = 'active'
+   - Set generation_id from request
+   - Initialize SR parameters: due_date=NOW(), interval=0, ease_factor=2.5, repetitions=0
+5. Batch insert all flashcards into database
+6. Return saved flashcards with full fields
+
+**Use Cases:**
+- Saving accepted AI proposals after user review/editing
+- Primary way to persist AI-generated flashcards
 
 ---
 
@@ -325,11 +424,11 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
 
 ### 4.2 Generation Management
 
-#### Create Generation with AI Flashcards
+#### Create Generation with AI Flashcard Proposals
 
 **Endpoint:** `POST /api/generations`
 
-**Description:** Generates 10 flashcard candidates from source text using AI, saves them to the database as candidates with a generation record, and returns them for editing
+**Description:** Generates 10 flashcard proposals from source text using AI, creates a generation record for tracking, and returns proposals to client for editing. Proposals are NOT saved as flashcards yet.
 
 **Request Body:**
 ```json
@@ -354,23 +453,16 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
   "source_text_hash": "sha256_hash_here",
   "flashcards_generated": 10,
   "created_at": "2025-10-11T12:00:00Z",
-  "flashcards": [
+  "proposals": [
     {
-      "id": "uuid",
-      "user_id": "uuid",
-      "generation_id": "uuid",
       "front": "What is photosynthesis?",
-      "back": "The process by which plants convert light energy into chemical energy",
-      "status": "candidate",
-      "source": "ai",
-      "due_date": null,
-      "interval": null,
-      "ease_factor": null,
-      "repetitions": null,
-      "created_at": "2025-10-11T12:00:00Z",
-      "updated_at": "2025-10-11T12:00:00Z"
+      "back": "The process by which plants convert light energy into chemical energy"
+    },
+    {
+      "front": "What is cellular respiration?",
+      "back": "The process of breaking down glucose to produce ATP"
     }
-    // ... 9 more flashcards
+    // ... 8 more proposals (only front/back fields, no id or database fields)
   ]
 }
 ```
@@ -387,20 +479,19 @@ GET /api/flashcards?status=active&search=physics&page=1&limit=20&sort=created_at
 1. Validate source_text length (1000-10000 chars)
 2. Calculate SHA-256 hash of source_text
 3. Call OpenRouter API with source text and server-configured model
-4. Parse AI response into 10 flashcard objects
-5. Create generation record in database
-6. Save all 10 flashcards to database with status='candidate', source='ai', generation_id set
-7. SR parameters remain NULL for candidates (will be initialized when status changes to 'active')
-8. On error: create generation_error_log record and return error
-9. Return generation metadata with saved candidate flashcards
+4. Parse AI response into 10 `FlashcardProposalDTO` objects (raw front/back pairs)
+5. Create generation record in database (with flashcards_generated=10)
+6. **Do NOT save flashcards** - proposals remain on client-side for editing
+7. On error: create generation_error_log record and return error
+8. Return generation metadata with raw proposals (FlashcardProposalDTO[])
 
 **Processing Notes:**
 - Frontend should show progress indicator during generation
 - Generation typically takes 10-30 seconds
-- Flashcards are immediately saved to database as candidates
-- User can edit candidates using PATCH /api/flashcards/:id
-- User can delete unwanted candidates using DELETE /api/flashcards/:id
-- User activates candidates by PATCH with status='active'
+- **Proposals are returned to client, NOT saved to database**
+- User edits proposals in client-side state (React/Vue/etc)
+- User can remove unwanted proposals from the list (client-side)
+- User saves accepted proposals via `POST /api/flashcards/batch` with generation_id
 
 ---
 
@@ -611,7 +702,7 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
 
 ### 5.2 Business Logic Implementation
 
-#### BL-1: AI Generation with Database Save
+#### BL-1: AI Generation with Proposals (No Flashcard Save)
 
 **Trigger:** POST `/api/generations`
 
@@ -629,35 +720,25 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
 
 3. **Parse AI Response**
    - Validate response structure
-   - Extract 10 flashcard objects
-   - Validate each flashcard (front/back length)
+   - Extract 10 `FlashcardProposalDTO` objects (only front/back fields)
+   - Validate each proposal (front/back length)
    - If validation fails, create error log and return error
 
-4. **Save to Database (Transaction)**
+4. **Save Generation Record Only**
    - Calculate SHA-256 hash of source_text
    - Create generation record:
      ```sql
      INSERT INTO generations (
        model, source_text_length, source_text_hash, flashcards_generated
      ) VALUES ($model, $length, $hash, 10)
-     RETURNING id
-     ```
-   - Batch insert all 10 flashcards as candidates:
-     ```sql
-     INSERT INTO flashcards (
-       generation_id, front, back, source, status,
-       due_date, interval, ease_factor, repetitions
-     ) VALUES (
-       $generation_id, $front, $back, 'ai', 'candidate',
-       NULL, NULL, NULL, NULL
-     )
      RETURNING *
      ```
+   - **Do NOT insert flashcards** - proposals stay on client
 
 5. **Return Response**
    - Status 201 Created
-   - Include generation metadata
-   - Include all saved candidate flashcards with IDs
+   - Include generation metadata (id, model, hash, count, created_at)
+   - Include raw proposals as `FlashcardProposalDTO[]` (only front/back, no database fields)
 
 **Error Handling:**
 - On any error, create error log:
@@ -667,10 +748,45 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
     source_text_length, source_text_hash
   ) VALUES (...)
   ```
-- Rollback transaction if database save fails
 - Return appropriate error response to user
 
-**Note:** Flashcards are immediately saved as candidates. User edits them via PATCH and activates via status change.
+**Note:** AI returns `FlashcardProposalDTO[]` to client for editing. User saves them later via `POST /api/flashcards/batch`.
+
+---
+
+#### BL-1A: Save Flashcard Proposals (Batch)
+
+**Trigger:** POST `/api/flashcards/batch`
+
+**Steps:**
+1. **Validate Input**
+   - Check generation_id exists in database
+   - Validate proposals array (1-10 items)
+   - Validate each proposal: front (1-200 chars), back (1-500 chars), was_edited (boolean)
+
+2. **Process Proposals**
+   - For each proposal, determine source:
+     - If was_edited=false → source='ai'
+     - If was_edited=true → source='ai-edited'
+
+3. **Batch Insert Flashcards**
+   ```sql
+   INSERT INTO flashcards (
+     generation_id, front, back, source, status,
+     due_date, interval, ease_factor, repetitions
+   ) VALUES (
+     $generation_id, $front, $back, $source, 'active',
+     NOW(), 0, 2.5, 0
+   )
+   RETURNING *
+   ```
+
+4. **Return Response**
+   - Status 201 Created
+   - Include saved_count
+   - Include all saved flashcards as `FlashcardDTO[]`
+
+**Note:** This is the primary way AI-generated proposals become persistent flashcards in the database.
 
 ---
 
@@ -699,9 +815,9 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
 
 ---
 
-#### BL-3: Edit Candidate Flashcard
+#### BL-3: Edit Active Flashcard
 
-**Trigger:** PATCH `/api/flashcards/:id` (for candidate flashcards)
+**Trigger:** PATCH `/api/flashcards/:id`
 
 **Steps:**
 1. **Validate Input**
@@ -710,7 +826,7 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
 
 2. **Update Flashcard**
    - If front or back changed and source='ai', automatically set source='ai-edited'
-   - If status changed to 'active' and SR params not provided, initialize them:
+   - Standard field updates (partial update pattern)
      ```sql
      UPDATE flashcards SET
        front = COALESCE($front, front),
@@ -721,15 +837,17 @@ GET /api/error-logs?page=1&limit=20&error_type=api_error
          ELSE source 
        END,
        status = COALESCE($status, status),
-       due_date = CASE WHEN $status = 'active' AND due_date IS NULL THEN NOW() ELSE due_date END,
-       interval = CASE WHEN $status = 'active' AND interval IS NULL THEN 0 ELSE interval END,
-       ease_factor = CASE WHEN $status = 'active' AND ease_factor IS NULL THEN 2.5 ELSE ease_factor END,
-       repetitions = CASE WHEN $status = 'active' AND repetitions IS NULL THEN 0 ELSE repetitions END
+       due_date = COALESCE($due_date, due_date),
+       interval = COALESCE($interval, interval),
+       ease_factor = COALESCE($ease_factor, ease_factor),
+       repetitions = COALESCE($repetitions, repetitions)
      WHERE id = $id
      RETURNING *
      ```
 
 3. **Return Updated Flashcard**
+
+**Note:** No candidate editing needed - proposals are edited client-side before batch save.
 
 ---
 
@@ -1202,6 +1320,12 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
 ### 11.4 AI Generation Implementation
 
+**Type Distinction:**
+- `FlashcardProposalDTO` - Raw AI response format (only `front` and `back` fields)
+- `FlashcardDTO` - Full database record (includes `id`, `status`, `due_date`, etc.)
+
+The AI service returns `FlashcardProposalDTO[]` which are then saved to the database and returned as `FlashcardDTO[]`.
+
 ```typescript
 import type { APIRoute } from 'astro'
 import { createHash } from 'crypto'
@@ -1252,8 +1376,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
     
     const aiResult = await aiResponse.json()
     
-    // Parse and validate AI response
-    const flashcards = parseFlashcardsFromAI(aiResult)
+    // Parse and validate AI response (returns FlashcardProposalDTO[])
+    const flashcardProposals = parseFlashcardsFromAI(aiResult)
     
     // Save to database (transaction)
     // Create generation record
@@ -1270,11 +1394,11 @@ export const POST: APIRoute = async ({ locals, request }) => {
     
     if (genError) throw genError
     
-    // Save flashcards as candidates
-    const flashcardsToInsert = flashcards.map(card => ({
+    // Save flashcard proposals as candidates in database
+    const flashcardsToInsert = flashcardProposals.map(proposal => ({
       generation_id: generation.id,
-      front: card.front,
-      back: card.back,
+      front: proposal.front,
+      back: proposal.back,
       source: 'ai',
       status: 'candidate',
       due_date: null,
@@ -1290,7 +1414,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     
     if (flashcardsError) throw flashcardsError
     
-    // Return saved generation with flashcards
+    // Return saved generation with full flashcards from database (FlashcardDTO[])
     return new Response(JSON.stringify({
       generation_id: generation.id,
       model: generation.model,
@@ -1298,7 +1422,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
       source_text_hash: generation.source_text_hash,
       flashcards_generated: generation.flashcards_generated,
       created_at: generation.created_at,
-      flashcards: savedFlashcards
+      flashcards: savedFlashcards // Full FlashcardDTO[] with id, status, etc.
     }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
@@ -1342,23 +1466,23 @@ This REST API provides a complete backend for the 10x Cards MVP application with
 ### Key API Flow
 
 **AI Generation Flow:**
-1. Generate and save candidates via `POST /api/generations` (saves to DB immediately as candidates)
-2. User edits candidates via `PATCH /api/flashcards/:id` (source auto-changes to 'ai-edited')
-3. User accepts candidates via `PATCH /api/flashcards/:id` with status='active' (SR params initialized)
-4. User rejects candidates via `DELETE /api/flashcards/:id`
+1. Generate proposals via `POST /api/generations` → returns `FlashcardProposalDTO[]` and generation_id
+2. **Client-side:** User reviews, edits, and removes unwanted proposals (React/Vue state)
+3. User saves accepted proposals via `POST /api/flashcards/batch` with generation_id
+4. Proposals are saved as active flashcards with proper source tracking
 
 **Manual Flashcard Flow:**
-1. Create manual flashcard via `POST /api/flashcards` (immediately active)
+1. Create manual flashcard via `POST /api/flashcards` (immediately active with source='manual')
 
 **Source Tracking:**
-- `'ai'` - Original AI-generated content (not edited)
-- `'ai-edited'` - AI content modified by user
+- `'ai'` - Original AI-generated proposal (not edited by user)
+- `'ai-edited'` - AI proposal modified by user before saving
 - `'manual'` - User-created content
 
 **Status Lifecycle:**
-- `'candidate'` - AI-generated, awaiting user review/edit/activation
-- `'active'` - Accepted flashcard, ready for spaced repetition
-- `'rejected'` - (Optional) Rejected flashcard before deletion
+- **No 'candidate' status** - proposals exist only on client-side
+- `'active'` - Saved flashcard, ready for spaced repetition
+- `'rejected'` - (Optional) Flashcard marked as rejected
 
 **Current Phase:** Authentication is **not implemented**. All endpoints are publicly accessible for development purposes. 
 

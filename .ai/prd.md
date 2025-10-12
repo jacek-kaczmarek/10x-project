@@ -3,9 +3,8 @@
 ## 1. Przegląd produktu
 
 10x Cards to aplikacja webowa skierowana do studentów, umożliwiająca szybkie tworzenie i zarządzanie fiszkami edukacyjnymi. Użytkownik może:
-- generować kandydatów fiszek przez AI na podstawie wklejonego tekstu (1000–10000 znaków)
-- edytować wygenerowane kandydaty po stronie klienta przed zapisaniem
-- zapisywać kolekcje fiszek z oznaczeniem źródła (AI, AI-edytowane, manualne)
+- generować kandydatów fiszek przez AI na podstawie wklejonego tekstu (1000–10000 znaków) jako generację wraz zapisanymi fiszkami-kandydatami,
+- edytować wygenerowane kandydaty i zapisywac z oznaczeniem źródła (AI, AI-edytowane, manualne)
 - ręcznie tworzyć pojedyncze fiszki lub całe kolekcje
 - przeglądać, edytować i usuwać fiszki w swojej kolekcji
 - odbywać sesje powtórek oparte na zewnętrznej bibliotece spaced repetition
@@ -19,10 +18,10 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
 ## 3. Wymagania funkcjonalne
 
 - Uwierzytelnianie: rejestracja, logowanie i zarządzanie sesją użytkownika
-- Generowanie kandydatów AI: pole tekstowe (1000–10000 znaków), stała liczba 10 kandydatów, pasek postępu z procentami oraz komunikat "Trwa generowanie"
-- Edycja kandydatów: możliwość edycji wygenerowanych kandydatów po stronie klienta przed zapisaniem kolekcji
-- Zapisywanie kolekcji: zapisanie edytowanych kandydatów jako kolekcji z automatycznym oznaczeniem źródła (AI, AI-edytowane, manualne)
-- Śledzenie generacji: każda zapisana kolekcja z AI tworzy obiekt generacji; zawiera: czas zapisania, użyty model AI, długość i hash źródłowego tekstu, identyfikator użytkownika
+- Generowanie propozycji fiszek AI: pole tekstowe (1000–10000 znaków), stała liczba 10 propozycji, pasek postępu z procentami oraz komunikat "Trwa generowanie"
+- Edycja propozycji: możliwość edycji wygenerowanych propozycji po stronie klienta (nie są jeszcze zapisane w bazie)
+- Zapisywanie fiszek: zapisanie zaakceptowanych i edytowanych propozycji do bazy jako aktywnych fiszek z automatycznym oznaczeniem źródła (AI, AI-edytowane, manualne)
+- Śledzenie generacji: każde uruchomienie generowania AI tworzy obiekt generacji (niezależnie od tego czy fiszki zostaną zapisane); zawiera: czas generowania, użyty model AI, długość i hash źródłowego tekstu, identyfikator użytkownika, liczbę wygenerowanych propozycji
 - Logowanie błędów generacji: błędy podczas generowania AI są zapisywane w systemie (generation_error_logs) z informacjami: typ błędu, komunikat, użyty model, długość i hash tekstu, identyfikator użytkownika
 - Niezależne fiszki: fiszki mogą istnieć poza generacjami (np. tworzone ręcznie)
 - Ręczne dodawanie fiszek: formularz z polami "przód" (maks. 200 znaków) i "tył" (maks. 500 znaków), możliwość tworzenia pojedynczych fiszek lub kolekcji
@@ -70,12 +69,13 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   - Użytkownik zostaje przekierowany na stronę logowania
 
 - ID: US-004
-  Tytuł: Generowanie kandydatów fiszek AI
-  Opis: Jako użytkownik chcę wkleić tekst (1000–10000 znaków) i wygenerować 10 kandydatów fiszek AI, aby szybko otrzymać propozycje do edycji.
+  Tytuł: Generowanie propozycji fiszek AI
+  Opis: Jako użytkownik chcę wkleić tekst (1000–10000 znaków) i wygenerować 10 propozycji fiszek AI, aby szybko otrzymać propozycje do edycji.
   Kryteria akceptacji:
   - Walidacja długości tekstu (min i max)
   - Po uruchomieniu wyświetlany jest pasek postępu z procentami i tekstem "Trwa generowanie"
-  - Po zakończeniu wyświetla się lista kandydatów do edycji (nie są jeszcze zapisane)
+  - Generacja jest zapisywana w systemie (obiekt generacji)
+  - Po zakończeniu wyświetla się lista propozycji do edycji (propozycje NIE są jeszcze zapisane w bazie jako fiszki)
 
 - ID: US-005
   Tytuł: Obsługa błędów generowania
@@ -86,11 +86,11 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
 
 - ID: US-005A
   Tytuł: Śledzenie generacji
-  Opis: Jako system chcę rejestrować każdą akcję generowania fiszek AI jako osobny obiekt generacji, aby umożliwić audyt i analizę.
+  Opis: Jako system chcę rejestrować każdą akcję generowania propozycji AI jako osobny obiekt generacji, aby umożliwić audyt i analizę.
   Kryteria akceptacji:
-  - Każde uruchomienie generowania AI tworzy rekord generacji
-  - Rekord zawiera: timestamp, użyty model AI, długość i hash źródłowego tekstu, ID użytkownika
-  - Wygenerowane fiszki są powiązane z tym rekordem generacji
+  - Każde uruchomienie generowania AI tworzy rekord generacji (niezależnie od tego czy propozycje zostaną zapisane)
+  - Rekord zawiera: timestamp, użyty model AI, długość i hash źródłowego tekstu, ID użytkownika, liczbę wygenerowanych propozycji
+  - Dopiero zapisane fiszki będą powiązane z rekordem generacji przez generation_id
   - Fiszki ręczne nie są powiązane z żadną generacją
 
 - ID: US-005B
@@ -102,19 +102,21 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   - Logi są dostępne dla administratora systemu
 
 - ID: US-006
-  Tytuł: Edycja kandydatów fiszek
-  Opis: Jako użytkownik chcę edytować wygenerowane kandydaty fiszek po stronie klienta przed zapisaniem, aby dostosować je do moich potrzeb.
+  Tytuł: Edycja propozycji fiszek
+  Opis: Jako użytkownik chcę edytować wygenerowane propozycje fiszek, aby dostosować je do moich potrzeb przed zapisaniem.
   Kryteria akceptacji:
-  - Lista kandydatów umożliwia edycję tekstu przód i tył każdej fiszki
-  - Możliwość usunięcia niepożądanych kandydatów z listy
-  - Zmiany są zachowywane lokalnie do momentu zapisania kolekcji
+  - Lista propozycji umożliwia edycję tekstu przód i tył każdej propozycji (po stronie klienta)
+  - Możliwość usunięcia niepożądanych propozycji z listy
+  - Zmiany są zachowywane lokalnie (w stanie React/frontend) do momentu zapisania
 
 - ID: US-006A
-  Tytuł: Zapisywanie kolekcji fiszek
-  Opis: Jako użytkownik chcę zapisać edytowaną kolekcję fiszek do bazy danych z odpowiednim oznaczeniem źródła.
+  Tytuł: Zapisywanie zaakceptowanych propozycji jako fiszek
+  Opis: Jako użytkownik chcę zapisać zaakceptowane i edytowane propozycje do bazy danych jako aktywne fiszki z odpowiednim oznaczeniem źródła.
   Kryteria akceptacji:
-  - Przycisk "Zapisz kolekcję" zapisuje wszystkie fiszki do bazy danych
-  - System automatycznie oznacza źródło: 'ai' (niezmienione), 'ai-edited' (edytowane), 'manual' (ręczne)
+  - Przycisk "Zapisz fiszki" wysyła zaakceptowane propozycje do API (batch save)
+  - System automatycznie oznacza źródło: 'ai' (niezmienione propozycje), 'ai-edited' (edytowane propozycje), 'manual' (ręczne)
+  - Wszystkie fiszki są powiązane z rekordem generacji przez generation_id
+  - Fiszki są zapisywane ze statusem 'active' i zainicjalizowanymi parametrami SR
   - Po zapisaniu użytkownik zostaje przekierowany do widoku kolekcji
 
 - ID: US-007

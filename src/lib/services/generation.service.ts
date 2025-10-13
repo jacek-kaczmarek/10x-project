@@ -2,15 +2,69 @@
 import { createHash } from "crypto";
 import { type SupabaseClient, DEFAULT_USER_ID } from "../../../src/db/supabase.client";
 import type { CreateGenerationResponseDTO, FlashcardProposalDTO, GenerationInsert } from "../../types";
+import { OpenRouterService, type ResponseFormat } from "./openrouter.service";
+
+/**
+ * JSON Schema for flashcard proposals response
+ */
+const FLASHCARD_PROPOSALS_SCHEMA: ResponseFormat = {
+  type: "json_schema",
+  json_schema: {
+    name: "FlashcardProposals",
+    strict: true,
+    schema: {
+      type: "object",
+      properties: {
+        flashcards: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              front: { type: "string" },
+              back: { type: "string" },
+            },
+            required: ["front", "back"],
+            additionalProperties: false,
+          },
+          minItems: 10,
+          maxItems: 10,
+        },
+      },
+      required: ["flashcards"],
+      additionalProperties: false,
+    },
+  },
+};
+
+/**
+ * System message for flashcard generation
+ */
+const SYSTEM_MESSAGE = `You are an expert educational content creator specializing in creating effective flashcards for spaced repetition learning.
+
+Your task is to analyze the provided source text and generate exactly 10 high-quality flashcards that:
+1. Cover the most important concepts and facts from the text
+2. Are clear, concise, and unambiguous
+3. Follow the principle of atomicity (one concept per card)
+4. Use simple language appropriate for learning
+5. Have questions (front) that test understanding, not just memorization
+6. Have answers (back) that are complete but concise
+
+Format your response as a JSON object with a "flashcards" array containing exactly 10 objects, each with "front" and "back" properties.`;
 
 /**
  * Service for generating flashcards using AI
  */
 export class GenerationService {
-  constructor(private readonly supabase: SupabaseClient) {}
-
   private readonly AI_MODEL = "openai/gpt-4o-mini";
-  // MVP placeholder user_id (auth not implemented yet)
+
+  constructor(
+    private readonly supabase: SupabaseClient,
+    private readonly openRouterService: OpenRouterService
+  ) {
+    // Set the system message for all requests
+    this.openRouterService.setSystemMessage(SYSTEM_MESSAGE);
+    this.openRouterService.setModel(this.AI_MODEL);
+  }
 
   /**
    * Creates a generation with AI-generated flashcard proposals
@@ -76,24 +130,51 @@ export class GenerationService {
 
   /**
    * Generates flashcards using OpenRouter AI API
-   * MOCK IMPLEMENTATION - To be replaced with actual API call
    * @param sourceText - Source text to generate flashcards from
    * @returns Array of 10 flashcard proposals
    */
   private async generateFlashcardsWithAI(sourceText: string): Promise<FlashcardProposalDTO[]> {
-    // TODO: Replace with actual OpenRouter API call
-    // For now, return mock data
+    try {
+      // Create user message with source text
+      const userMessage = `Please analyze the following text and generate exactly 10 flashcards:
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+${sourceText}`;
 
-    // Mock proposals based on source text
-    const mockProposals: FlashcardProposalDTO[] = Array.from({ length: 10 }, (_, i) => ({
-      front: `Question ${i + 1} from source text (${sourceText.substring(0, 30)}...)`,
-      back: `Answer ${i + 1} explaining the concept from the source material`,
-    }));
+      // Call OpenRouter API with structured output
+      const response = await this.openRouterService.sendChatCompletion(
+        [
+          {
+            role: "user",
+            content: userMessage,
+          },
+        ],
+        {
+          responseFormat: FLASHCARD_PROPOSALS_SCHEMA,
+          parameters: {
+            temperature: 0.7,
+            max_tokens: 2000,
+          },
+        }
+      );
 
-    return mockProposals;
+      // Extract flashcards from response
+      if (!response || !response.flashcards || !Array.isArray(response.flashcards)) {
+        throw new Error("Invalid response structure from AI service");
+      }
+
+      // Validate we got exactly 10 flashcards
+      if (response.flashcards.length !== 10) {
+        throw new Error(`Expected 10 flashcards, received ${response.flashcards.length}`);
+      }
+
+      return response.flashcards as FlashcardProposalDTO[];
+    } catch (error) {
+      // Re-throw with context
+      if (error instanceof Error) {
+        throw new Error(`Failed to generate flashcards with AI: ${error.message}`);
+      }
+      throw new Error("Failed to generate flashcards with AI: Unknown error");
+    }
   }
 
   /**

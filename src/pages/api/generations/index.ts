@@ -2,6 +2,7 @@
 import type { APIRoute } from "astro";
 import { createGenerationSchema } from "../../../lib/validators/generations";
 import { GenerationService } from "../../../lib/services/generation.service";
+import { OpenRouterService } from "../../../lib/services/openrouter.service";
 import type { CreateGenerationCommand, ErrorResponseDTO } from "../../../types";
 
 export const prerender = false;
@@ -41,8 +42,29 @@ export const POST: APIRoute = async (context) => {
     // Get Supabase client from context
     const supabase = context.locals.supabase;
 
+    // Get OpenRouter API key from environment
+    const apiKey = import.meta.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      const errorResponse: ErrorResponseDTO = {
+        error: {
+          code: "CONFIGURATION_ERROR",
+          message: "OpenRouter API key is not configured",
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
+
+    // Create OpenRouter service instance
+    const openRouterService = new OpenRouterService(apiKey);
+
     // Create generation service instance
-    const generationService = new GenerationService(supabase);
+    const generationService = new GenerationService(supabase, openRouterService);
 
     // Generate flashcards
     const result = await generationService.createGeneration(source_text);

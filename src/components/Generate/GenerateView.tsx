@@ -54,9 +54,9 @@ export default function GenerateView() {
         front: p.front,
         back: p.back,
         wasEdited: false,
+        wasAccepted: false,
         removed: false,
       }));
-
       setMetadata({
         generationId: result.generation_id,
         model: result.model,
@@ -87,13 +87,20 @@ export default function GenerateView() {
     setProposals((prev) => prev.map((p) => (p.id === id ? { ...p, removed: true } : p)));
   };
 
+  // Handle proposal toggle accept
+  const handleProposalToggleAccept = (id: string) => {
+    setProposals((prev) => prev.map((p) => (p.id === id ? { ...p, wasAccepted: !p.wasAccepted } : p)));
+  };
+
   // Validate proposals before saving
-  const validateProposals = (): boolean => {
-    const activeProposals = proposals.filter((p) => !p.removed);
+  const validateProposals = (onlyAccepted: boolean): boolean => {
+    const activeProposals = proposals.filter((p) => !p.removed && (!onlyAccepted || p.wasAccepted));
 
     if (activeProposals.length === 0) {
       toast.error("Brak fiszek do zapisania", {
-        description: "Musisz zostawić co najmniej jedną fiszkę",
+        description: onlyAccepted
+          ? "Musisz zaakceptować co najmniej jedną fiszkę"
+          : "Musisz zostawić co najmniej jedną fiszkę",
       });
       return false;
     }
@@ -116,16 +123,16 @@ export default function GenerateView() {
     return true;
   };
 
-  // Handle save flashcards
-  const handleSaveFlashcards = async () => {
-    if (!metadata || !validateProposals()) {
+  // Handle save flashcards (onlyAccepted: true for accepted only, false for all)
+  const handleSaveFlashcards = async (onlyAccepted: boolean) => {
+    if (!metadata || !validateProposals(onlyAccepted)) {
       return;
     }
 
     setIsSaving(true);
 
     try {
-      const activeProposals = proposals.filter((p) => !p.removed);
+      const activeProposals = proposals.filter((p) => !p.removed && (!onlyAccepted || p.wasAccepted));
 
       const response = await fetch("/api/flashcards/batch", {
         method: "POST",
@@ -163,8 +170,9 @@ export default function GenerateView() {
   };
 
   const activeProposalsCount = proposals.filter((p) => !p.removed).length;
+  const acceptedProposalsCount = proposals.filter((p) => !p.removed && p.wasAccepted).length;
   const showProposals = proposals.length > 0 && !loading;
-  const showSaveButton = showProposals && activeProposalsCount > 0;
+  const showSaveButtons = showProposals && activeProposalsCount > 0;
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -192,23 +200,40 @@ export default function GenerateView() {
       )}
 
       {showProposals && (
-        <div className="mt-8">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="mt-8 space-y-6">
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">
               Propozycje fiszek ({activeProposalsCount}/{proposals.length})
+              {acceptedProposalsCount > 0 && (
+                <span className="ml-2 text-sm font-normal text-green-600">
+                  ({acceptedProposalsCount} zaakceptowanych)
+                </span>
+              )}
             </h2>
             {metadata && <p className="text-sm text-muted-foreground">Model: {metadata.model}</p>}
           </div>
 
-          <FlashcardProposalList proposals={proposals} onEdit={handleProposalEdit} onRemove={handleProposalRemove} />
-
-          {showSaveButton && (
-            <div className="mt-6 flex justify-end">
-              <Button onClick={handleSaveFlashcards} disabled={isSaving} size="lg">
-                {isSaving ? "Zapisywanie..." : `Zapisz fiszki (${activeProposalsCount})`}
+          {showSaveButtons && (
+            <div className="flex gap-3">
+              <Button onClick={() => handleSaveFlashcards(false)} disabled={isSaving} size="lg" variant="outline">
+                {isSaving ? "Zapisywanie..." : `Zapisz wszystkie (${activeProposalsCount})`}
+              </Button>
+              <Button
+                onClick={() => handleSaveFlashcards(true)}
+                disabled={isSaving || acceptedProposalsCount === 0}
+                size="lg"
+              >
+                {isSaving ? "Zapisywanie..." : `Zapisz zaakceptowane (${acceptedProposalsCount})`}
               </Button>
             </div>
           )}
+
+          <FlashcardProposalList
+            proposals={proposals}
+            onEdit={handleProposalEdit}
+            onRemove={handleProposalRemove}
+            onToggleAccept={handleProposalToggleAccept}
+          />
         </div>
       )}
     </div>

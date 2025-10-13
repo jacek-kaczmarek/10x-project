@@ -1,10 +1,11 @@
 // View Model types for Generate view
 
-export interface ProposalVM {
+import type { FlashcardProposalDTO } from "@/types";
+
+export interface ProposalVM extends FlashcardProposalDTO {
   id: string;
-  front: string;
-  back: string;
   wasEdited: boolean;
+  wasAccepted: boolean;
   removed: boolean;
 }
 

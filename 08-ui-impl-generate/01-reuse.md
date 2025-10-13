@@ -1,0 +1,1 @@
+why aren't you reusing the Dto model for FlashcardProposalDTO in the views?

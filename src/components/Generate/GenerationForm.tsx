@@ -48,7 +48,7 @@ export default function GenerationForm({
           value={sourceText}
           onChange={(e) => onSourceTextChange(e.target.value)}
           disabled={loading}
-          className="min-h-[200px] resize-y"
+          className="min-h-[120px] max-h-[180px] resize-y"
           aria-invalid={validationError ? "true" : "false"}
           aria-describedby={validationError ? "validation-error" : "char-count"}
         />

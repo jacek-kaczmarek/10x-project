@@ -3,22 +3,25 @@ Twoim zadaniem jest wdrożenie endpointa interfejsu API REST w oparciu o podany 
 Najpierw dokładnie przejrzyj dostarczony plan wdrożenia:
 
 <implementation_plan>
-{{endpoint-implementation-plan}} <- dodaj referencję do planu implementacji endpointa (np. @generations-endpoint-implementation-plan.md)
+@generations-implementation-plan.md 
 </implementation_plan>
 
 <types>
-{{types}} <- dodaj referencje do definicji typów (np. @types)
+@types.ts 
+
 </types>
 
 <implementation_rules>
-{{backend-rules}} <- dodaj referencje do reguł backendowych (np. @shared.mdc, @backend.mdc, @astro.mdc)
+@shared.mdc , @backend.mdc , @astro.mdc 
+
+
 </implementation_rules>
 
 <implementation_approach>
 Realizuj maksymalnie 3 kroki planu implementacji, podsumuj krótko co zrobiłeś i opisz plan na 3 kolejne działania - zatrzymaj w tym momencie pracę i czekaj na mój feedback.
 </implementation_approach>
 
-Teraz wykonaj następujące kroki, aby zaimplementować punkt końcowy interfejsu API REST:
+Teraz  wykonaj następujące kroki, aby zaimplementować punkt końcowy interfejsu API REST:
 
 1. Przeanalizuj plan wdrożenia:
    - Określ metodę HTTP (GET, POST, PUT, DELETE itp.) dla punktu końcowego.

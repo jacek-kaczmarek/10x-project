@@ -20,11 +20,11 @@ export default function GenerateView() {
   // Validate source text length
   const validateSourceText = (text: string): boolean => {
     if (text.length < 1000) {
-      setValidationError("Tekst musi zawierać minimum 1000 znaków");
+      setValidationError("Text must contain at least 1000 characters");
       return false;
     }
     if (text.length > 10000) {
-      setValidationError("Tekst może zawierać maksymalnie 10000 znaków");
+      setValidationError("Text can contain at most 10000 characters");
       return false;
     }
     setValidationError(null);
@@ -66,10 +66,10 @@ export default function GenerateView() {
       });
       setProposals(proposalVMs);
 
-      toast.success(`Wygenerowano ${result.flashcards_generated} fiszek`);
+      toast.success(`Generated ${result.flashcards_generated} flashcards`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Wystąpił błąd podczas generowania";
-      toast.error("Błąd generowania", {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred during generation";
+      toast.error("Generation error", {
         description: errorMessage,
       });
     }
@@ -97,24 +97,22 @@ export default function GenerateView() {
     const activeProposals = proposals.filter((p) => !p.removed && (!onlyAccepted || p.wasAccepted));
 
     if (activeProposals.length === 0) {
-      toast.error("Brak fiszek do zapisania", {
-        description: onlyAccepted
-          ? "Musisz zaakceptować co najmniej jedną fiszkę"
-          : "Musisz zostawić co najmniej jedną fiszkę",
+      toast.error("No flashcards to save", {
+        description: onlyAccepted ? "You must accept at least one flashcard" : "You must keep at least one flashcard",
       });
       return false;
     }
 
     for (const proposal of activeProposals) {
       if (proposal.front.length < 1 || proposal.front.length > 200) {
-        toast.error("Błąd walidacji", {
-          description: "Przód fiszki musi zawierać 1-200 znaków",
+        toast.error("Validation error", {
+          description: "Flashcard front must contain 1-200 characters",
         });
         return false;
       }
       if (proposal.back.length < 1 || proposal.back.length > 500) {
-        toast.error("Błąd walidacji", {
-          description: "Tył fiszki musi zawierać 1-500 znaków",
+        toast.error("Validation error", {
+          description: "Flashcard back must contain 1-500 characters",
         });
         return false;
       }
@@ -151,17 +149,17 @@ export default function GenerateView() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || "Błąd zapisu fiszek");
+        throw new Error(errorData.error?.message || "Error saving flashcards");
       }
 
       const data = await response.json();
-      toast.success(`Zapisano ${data.saved_count} fiszek`);
+      toast.success(`Saved ${data.saved_count} flashcards`);
 
       // Redirect to flashcards list or home after successful save
       window.location.href = "/";
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Wystąpił błąd podczas zapisywania";
-      toast.error("Błąd zapisu", {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred during saving";
+      toast.error("Save error", {
         description: errorMessage,
       });
     } finally {
@@ -179,9 +177,9 @@ export default function GenerateView() {
       <Toaster />
 
       <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold">Generuj fiszki</h1>
+        <h1 className="mb-2 text-3xl font-bold">Generate Flashcards</h1>
         <p className="text-muted-foreground">
-          Wklej tekst (1000-10000 znaków), a AI wygeneruje dla Ciebie 10 propozycji fiszek
+          Paste text (1000-10000 characters), and AI will generate 10 flashcard proposals for you
         </p>
       </div>
 
@@ -203,11 +201,9 @@ export default function GenerateView() {
         <div className="mt-8 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">
-              Propozycje fiszek ({activeProposalsCount}/{proposals.length})
+              Flashcard Proposals ({activeProposalsCount}/{proposals.length})
               {acceptedProposalsCount > 0 && (
-                <span className="ml-2 text-sm font-normal text-green-600">
-                  ({acceptedProposalsCount} zaakceptowanych)
-                </span>
+                <span className="ml-2 text-sm font-normal text-green-600">({acceptedProposalsCount} accepted)</span>
               )}
             </h2>
             {metadata && <p className="text-sm text-muted-foreground">Model: {metadata.model}</p>}
@@ -216,14 +212,14 @@ export default function GenerateView() {
           {showSaveButtons && (
             <div className="flex gap-3">
               <Button onClick={() => handleSaveFlashcards(false)} disabled={isSaving} size="lg" variant="outline">
-                {isSaving ? "Zapisywanie..." : `Zapisz wszystkie (${activeProposalsCount})`}
+                {isSaving ? "Saving..." : `Save all (${activeProposalsCount})`}
               </Button>
               <Button
                 onClick={() => handleSaveFlashcards(true)}
                 disabled={isSaving || acceptedProposalsCount === 0}
                 size="lg"
               >
-                {isSaving ? "Zapisywanie..." : `Zapisz zaakceptowane (${acceptedProposalsCount})`}
+                {isSaving ? "Saving..." : `Save accepted (${acceptedProposalsCount})`}
               </Button>
             </div>
           )}

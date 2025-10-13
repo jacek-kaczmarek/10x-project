@@ -39,12 +39,12 @@ export default function GenerationForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <label htmlFor="source-text" className="text-sm font-medium">
-          Tekst źródłowy
+          Source Text
         </label>
         <Textarea
           id="source-text"
-          aria-label="Tekst źródłowy"
-          placeholder="Wklej tutaj tekst, z którego AI wygeneruje fiszki (1000-10000 znaków)..."
+          aria-label="Source text"
+          placeholder="Paste the text from which AI will generate flashcards (1000-10000 characters)..."
           value={sourceText}
           onChange={(e) => onSourceTextChange(e.target.value)}
           disabled={loading}
@@ -55,7 +55,7 @@ export default function GenerationForm({
 
         <div className="flex items-center justify-between text-sm">
           <span id="char-count" className={getProgressColor()}>
-            {charCount} / {minChars}-{maxChars} znaków
+            {charCount} / {minChars}-{maxChars} characters
           </span>
 
           {validationError && (
@@ -67,7 +67,7 @@ export default function GenerationForm({
       </div>
 
       <Button type="submit" disabled={!isValid || loading} className="w-full sm:w-auto">
-        {loading ? "Generowanie..." : "Generuj fiszki"}
+        {loading ? "Generating..." : "Generate Flashcards"}
       </Button>
     </form>
   );

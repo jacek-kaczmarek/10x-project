@@ -1,6 +1,7 @@
 // src/lib/services/openrouter.service.ts
 import axios, { type AxiosInstance, type AxiosError } from "axios";
 import Ajv, { type ValidateFunction } from "ajv";
+import { OPENROUTER_CONFIG } from "../config/openrouter.config";
 
 /**
  * Message role types for chat completion
@@ -102,8 +103,8 @@ export class OpenRouterService {
   private readonly httpClient: AxiosInstance;
   private readonly ajv: Ajv;
   private systemMessage?: string;
-  private readonly maxRetries = 3;
-  private readonly retryDelayMs = 1000;
+  private readonly maxRetries = OPENROUTER_CONFIG.RETRY.MAX_RETRIES;
+  private readonly retryDelayMs = OPENROUTER_CONFIG.RETRY.INITIAL_DELAY_MS;
 
   /**
    * Creates an instance of OpenRouterService
@@ -116,9 +117,9 @@ export class OpenRouterService {
     }
 
     this.apiKey = apiKey;
-    this.baseUrl = options?.baseUrl || "https://openrouter.ai/api/v1";
-    this.model = options?.defaultModel || "openai/gpt-4o-mini";
-    this.timeoutMs = options?.timeoutMs || 30000;
+    this.baseUrl = options?.baseUrl || OPENROUTER_CONFIG.BASE_URL;
+    this.model = options?.defaultModel || OPENROUTER_CONFIG.DEFAULT_MODEL;
+    this.timeoutMs = options?.timeoutMs || OPENROUTER_CONFIG.TIMEOUT_MS;
 
     // Initialize HTTP client
     this.httpClient = axios.create({
@@ -127,8 +128,8 @@ export class OpenRouterService {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.apiKey}`,
-        "HTTP-Referer": "https://flashcard-generator.local", // Optional - for rankings
-        "X-Title": "Flashcard Generator", // Optional - for rankings
+        "HTTP-Referer": OPENROUTER_CONFIG.HEADERS.HTTP_REFERER,
+        "X-Title": OPENROUTER_CONFIG.HEADERS.X_TITLE,
       },
     });
 

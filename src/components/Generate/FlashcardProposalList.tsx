@@ -15,7 +15,7 @@ export default function FlashcardProposalList({
   onToggleAccept,
 }: FlashcardProposalListProps) {
   return (
-    <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" aria-label="Lista propozycji fiszek">
+    <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" aria-label="Flashcard proposals list">
       {proposals.map((proposal, index) => (
         <FlashcardItem
           key={proposal.id}

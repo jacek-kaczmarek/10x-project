@@ -2,67 +2,26 @@
 import { createHash } from "crypto";
 import { type SupabaseClient, DEFAULT_USER_ID } from "../../../src/db/supabase.client";
 import type { CreateGenerationResponseDTO, FlashcardProposalDTO, GenerationInsert } from "../../types";
-import { OpenRouterService, type ResponseFormat } from "./openrouter.service";
-
-/**
- * JSON Schema for flashcard proposals response
- */
-const FLASHCARD_PROPOSALS_SCHEMA: ResponseFormat = {
-  type: "json_schema",
-  json_schema: {
-    name: "FlashcardProposals",
-    strict: true,
-    schema: {
-      type: "object",
-      properties: {
-        flashcards: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              front: { type: "string" },
-              back: { type: "string" },
-            },
-            required: ["front", "back"],
-            additionalProperties: false,
-          },
-          minItems: 10,
-          maxItems: 10,
-        },
-      },
-      required: ["flashcards"],
-      additionalProperties: false,
-    },
-  },
-};
-
-/**
- * System message for flashcard generation
- */
-const SYSTEM_MESSAGE = `You are an expert educational content creator specializing in creating effective flashcards for spaced repetition learning.
-
-Your task is to analyze the provided source text and generate exactly 10 high-quality flashcards that:
-1. Cover the most important concepts and facts from the text
-2. Are clear, concise, and unambiguous
-3. Follow the principle of atomicity (one concept per card)
-4. Use simple language appropriate for learning
-5. Have questions (front) that test understanding, not just memorization
-6. Have answers (back) that are complete but concise
-
-Format your response as a JSON object with a "flashcards" array containing exactly 10 objects, each with "front" and "back" properties.`;
+import { OpenRouterService } from "./openrouter.service";
+import { OPENROUTER_CONFIG, FLASHCARD_GENERATION_PARAMS } from "../config/openrouter.config";
+import {
+  FLASHCARD_PROPOSALS_SCHEMA,
+  FLASHCARD_GENERATION_SYSTEM_MESSAGE,
+  createFlashcardGenerationUserMessage,
+} from "../config/flashcard-schema.config";
 
 /**
  * Service for generating flashcards using AI
  */
 export class GenerationService {
-  private readonly AI_MODEL = "openai/gpt-4o-mini";
+  private readonly AI_MODEL = OPENROUTER_CONFIG.DEFAULT_MODEL;
 
   constructor(
     private readonly supabase: SupabaseClient,
     private readonly openRouterService: OpenRouterService
   ) {
     // Set the system message for all requests
-    this.openRouterService.setSystemMessage(SYSTEM_MESSAGE);
+    this.openRouterService.setSystemMessage(FLASHCARD_GENERATION_SYSTEM_MESSAGE);
     this.openRouterService.setModel(this.AI_MODEL);
   }
 
@@ -136,9 +95,7 @@ export class GenerationService {
   private async generateFlashcardsWithAI(sourceText: string): Promise<FlashcardProposalDTO[]> {
     try {
       // Create user message with source text
-      const userMessage = `Please analyze the following text and generate exactly 10 flashcards:
-
-${sourceText}`;
+      const userMessage = createFlashcardGenerationUserMessage(sourceText);
 
       // Call OpenRouter API with structured output
       const response = await this.openRouterService.sendChatCompletion(
@@ -151,8 +108,8 @@ ${sourceText}`;
         {
           responseFormat: FLASHCARD_PROPOSALS_SCHEMA,
           parameters: {
-            temperature: 0.7,
-            max_tokens: 2000,
+            temperature: FLASHCARD_GENERATION_PARAMS.temperature,
+            max_tokens: FLASHCARD_GENERATION_PARAMS.max_tokens,
           },
         }
       );
@@ -162,9 +119,10 @@ ${sourceText}`;
         throw new Error("Invalid response structure from AI service");
       }
 
-      // Validate we got exactly 10 flashcards
-      if (response.flashcards.length !== 10) {
-        throw new Error(`Expected 10 flashcards, received ${response.flashcards.length}`);
+      // Validate we got exactly the expected number of flashcards
+      const expectedCount = FLASHCARD_GENERATION_PARAMS.flashcardsCount;
+      if (response.flashcards.length !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} flashcards, received ${response.flashcards.length}`);
       }
 
       return response.flashcards as FlashcardProposalDTO[];

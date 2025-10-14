@@ -60,6 +60,7 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   - Formularz logowania zawiera pola email i hasło
   - Poprawne dane przekierowują do pulpitu użytkownika
   - Niepoprawne dane wyświetlają komunikat o błędzie
+  - Proces odbywa się na dedykowanej stronie
 
 - ID: US-003
   Tytuł: Wylogowanie
@@ -67,6 +68,7 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   Kryteria akceptacji:
   - Po kliknięciu wyloguj sesja zostaje zakończona
   - Użytkownik zostaje przekierowany na stronę logowania
+  - Proces odbywa się na dedykowanej stronie
 
 - ID: US-004
   Tytuł: Generowanie propozycji fiszek AI

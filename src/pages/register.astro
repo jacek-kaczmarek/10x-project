@@ -1,0 +1,21 @@
+---
+import Layout from "../layouts/Layout.astro";
+import AuthLayout from "../layouts/AuthLayout.astro";
+import { RegisterForm } from "../components/Auth/RegisterForm";
+
+// TODO: Add logic to redirect authenticated users to /generate
+// const user = Astro.locals.user;
+// if (user) {
+//   return Astro.redirect('/generate');
+// }
+
+// TODO: Handle error/success messages from query params
+const error = Astro.url.searchParams.get("error");
+const success = Astro.url.searchParams.get("success");
+---
+
+<Layout title="Rejestracja - 10x Cards">
+  <AuthLayout>
+    <RegisterForm client:load error={error || undefined} success={success || undefined} />
+  </AuthLayout>
+</Layout>

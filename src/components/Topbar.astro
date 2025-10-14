@@ -1,0 +1,41 @@
+---
+import { LogoutButton } from "./Auth/LogoutButton";
+
+interface Props {
+  user?: { id: string; email: string } | null;
+}
+
+const { user } = Astro.props;
+---
+
+<header class="border-b bg-card">
+  <nav class="container mx-auto px-4 h-16 flex items-center justify-between">
+    <a href="/" class="text-xl font-semibold hover:text-primary transition-colors"> 10x Cards </a>
+
+    <div class="flex items-center gap-4">
+      {
+        user ? (
+          <>
+            <span class="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
+            <a href="/generate" class="text-sm font-medium hover:text-primary transition-colors">
+              Generuj
+            </a>
+            <LogoutButton client:load />
+          </>
+        ) : (
+          <>
+            <a href="/login" class="text-sm font-medium hover:text-primary transition-colors">
+              Zaloguj się
+            </a>
+            <a
+              href="/register"
+              class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground h-9 px-4 py-2 hover:bg-primary/90 transition-colors"
+            >
+              Zarejestruj się
+            </a>
+          </>
+        )
+      }
+    </div>
+  </nav>
+</header>

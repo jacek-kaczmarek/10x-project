@@ -1,6 +1,6 @@
 // src/lib/services/generation.service.ts
 import { createHash } from "crypto";
-import { type SupabaseClient, DEFAULT_USER_ID } from "../../../src/db/supabase.client";
+import { type SupabaseClient } from "../../../src/db/supabase.client";
 import type { CreateGenerationResponseDTO, FlashcardProposalDTO, GenerationInsert } from "../../types";
 import { OpenRouterService } from "./openrouter.service";
 import { OPENROUTER_CONFIG, FLASHCARD_GENERATION_PARAMS } from "../config/openrouter.config";
@@ -28,9 +28,10 @@ export class GenerationService {
   /**
    * Creates a generation with AI-generated flashcard proposals
    * @param sourceText - The source text to generate flashcards from (1000-10000 chars)
+   * @param userId - The ID of the authenticated user
    * @returns Generation metadata with flashcard proposals
    */
-  async createGeneration(sourceText: string): Promise<CreateGenerationResponseDTO> {
+  async createGeneration(sourceText: string, userId: string): Promise<CreateGenerationResponseDTO> {
     // Calculate SHA-256 hash of source text
     const sourceTextHash = this.calculateHash(sourceText);
 
@@ -44,7 +45,7 @@ export class GenerationService {
         source_text_length: sourceText.length,
         source_text_hash: sourceTextHash,
         flashcards_generated: proposals.length,
-        user_id: DEFAULT_USER_ID,
+        user_id: userId,
       };
 
       const { data: generation, error: insertError } = await this.supabase
@@ -71,7 +72,7 @@ export class GenerationService {
       return response;
     } catch (error) {
       // Log error to database
-      await this.logError(error, sourceText, sourceTextHash);
+      await this.logError(error, sourceText, sourceTextHash, userId);
 
       // Re-throw error to be handled by API route
       throw error;
@@ -140,8 +141,9 @@ export class GenerationService {
    * @param error - The error that occurred
    * @param sourceText - The source text that was being processed
    * @param sourceTextHash - Hash of the source text
+   * @param userId - The ID of the authenticated user
    */
-  private async logError(error: unknown, sourceText: string, sourceTextHash: string): Promise<void> {
+  private async logError(error: unknown, sourceText: string, sourceTextHash: string, userId: string): Promise<void> {
     try {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       const errorType = error instanceof Error ? error.constructor.name : "Error";
@@ -152,7 +154,7 @@ export class GenerationService {
         source_text_length: sourceText.length,
         source_text_hash: sourceTextHash,
         model: this.AI_MODEL,
-        user_id: DEFAULT_USER_ID,
+        user_id: userId,
       });
     } catch (logError) {
       // If logging fails, just log to console - don't throw

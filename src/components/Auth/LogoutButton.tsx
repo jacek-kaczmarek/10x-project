@@ -7,12 +7,22 @@ export function LogoutButton() {
   const handleLogout = async () => {
     setIsLoading(true);
 
-    // Submit logout form (will be handled by Astro endpoint in the future)
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "/api/auth/logout";
-    document.body.appendChild(form);
-    form.submit();
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        // Redirect to login page after successful logout
+        window.location.href = "/login";
+      } else {
+        console.error("Logout failed");
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      setIsLoading(false);
+    }
   };
 
   return (

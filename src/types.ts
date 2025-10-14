@@ -135,3 +135,26 @@ export interface ErrorResponseDTO<Details = Record<string, unknown>> {
     details?: Details;
   };
 }
+
+// ============= AUTH TYPES =============
+
+// Request DTOs
+export interface LoginRequestDTO {
+  email: string;
+  password: string;
+}
+
+// Response DTOs
+export interface AuthUserDTO {
+  id: string;
+  email: string;
+}
+
+export interface LoginResponseDTO {
+  message: string;
+  user: AuthUserDTO;
+}
+
+export interface MessageResponseDTO {
+  message: string;
+}

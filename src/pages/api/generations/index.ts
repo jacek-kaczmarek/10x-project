@@ -39,6 +39,24 @@ export const POST: APIRoute = async (context) => {
 
     const { source_text } = validationResult.data;
 
+    // Check authentication
+    const user = context.locals.user;
+    if (!user) {
+      const errorResponse: ErrorResponseDTO = {
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Musisz być zalogowany",
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
+
     // Get Supabase client from context
     const supabase = context.locals.supabase;
 
@@ -66,8 +84,8 @@ export const POST: APIRoute = async (context) => {
     // Create generation service instance
     const generationService = new GenerationService(supabase, openRouterService);
 
-    // Generate flashcards
-    const result = await generationService.createGeneration(source_text);
+    // Generate flashcards with authenticated user ID
+    const result = await generationService.createGeneration(source_text, user.id);
 
     // Return success response
     return new Response(JSON.stringify(result), {

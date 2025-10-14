@@ -42,11 +42,11 @@
 
 #### Reguły walidacji (Zod):
 - Email: format email, wymagane
-- Password: min. 8 znaków, wymagane
+- Password: min. 6 znaków, wymagane
 - Token: UUID format
 
 #### Komunikaty błędów:
-- **400** - błędy walidacji ("Email jest wymagany", "Hasło min. 8 znaków")
+- **400** - błędy walidacji ("Email jest wymagany", "Hasło min. 6 znaków")
 - **401** - błędy auth ("Niepoprawny email lub hasło", "Konto niezweryfikowane")
 - **409** - email już istnieje
 - **500** - błędy serwera

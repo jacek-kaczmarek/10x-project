@@ -45,8 +45,8 @@ export default function LoginForm() {
       return
     }
 
-    if (!password || password.length < 8) {
-      setError('Hasło musi mieć minimum 8 znaków')
+    if (!password || password.length < 6) {
+      setError('Hasło musi mieć minimum 6 znaków')
       return
     }
 
@@ -162,8 +162,8 @@ export default function RegisterForm() {
       newErrors.email = 'Niepoprawny format adresu email'
     }
 
-    if (!password || password.length < 8) {
-      newErrors.password = 'Hasło musi mieć minimum 8 znaków'
+    if (!password || password.length < 6) {
+      newErrors.password = 'Hasło musi mieć minimum 6 znaków'
     }
 
     if (password !== confirmPassword) {
@@ -252,7 +252,7 @@ export default function RegisterForm() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Min. 8 znaków"
+          placeholder="Min. 6 znaków"
           disabled={isLoading}
         />
         {errors.password && (
@@ -403,8 +403,8 @@ export default function ResetPasswordForm({ token }: Props) {
   const validate = () => {
     const newErrors: typeof errors = {}
 
-    if (!newPassword || newPassword.length < 8) {
-      newErrors.newPassword = 'Hasło musi mieć minimum 8 znaków'
+    if (!newPassword || newPassword.length < 6) {
+      newErrors.newPassword = 'Hasło musi mieć minimum 6 znaków'
     }
 
     if (newPassword !== confirmPassword) {
@@ -461,7 +461,7 @@ export default function ResetPasswordForm({ token }: Props) {
           type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="Min. 8 znaków"
+          placeholder="Min. 6 znaków"
           disabled={isLoading}
         />
         {errors.newPassword && (
@@ -1178,7 +1178,7 @@ export const emailSchema = z
 
 export const passwordSchema = z
   .string({ required_error: 'Hasło jest wymagane' })
-  .min(8, 'Hasło musi mieć minimum 8 znaków')
+  .min(8, 'Hasło musi mieć minimum 6 znaków')
 
 export const registerSchema = z.object({
   email: emailSchema,
@@ -1240,10 +1240,10 @@ export function handleSupabaseAuthError(error: AuthError): Response {
       code = 'TOKEN_EXPIRED'
       message = 'Link resetowania hasła wygasł'
       break
-    case 'Password should be at least 8 characters':
+    case 'Password should be at least 6 characters':
       status = 400
       code = 'WEAK_PASSWORD'
-      message = 'Hasło musi mieć minimum 8 znaków'
+      message = 'Hasło musi mieć minimum 6 znaków'
       break
     default:
       console.error('Unhandled Supabase auth error:', error)
@@ -1685,7 +1685,7 @@ interface ImportMeta {
 
 **Rejestracja:**
 - [ ] Walidacja email (niepoprawny format)
-- [ ] Walidacja hasła (< 8 znaków)
+- [ ] Walidacja hasła (< 6 znaków)
 - [ ] Hasła nie zgadzają się
 - [ ] Email już istnieje (409)
 - [ ] Sukces → email weryfikacyjny

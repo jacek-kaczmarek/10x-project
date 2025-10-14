@@ -1,8 +1,8 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import ProtectedLayout from "../layouts/ProtectedLayout.astro";
 import GenerateView from "../components/Generate/GenerateView";
 ---
 
-<Layout title="Generuj fiszki">
+<ProtectedLayout title="Generuj fiszki">
   <GenerateView client:load />
-</Layout>
+</ProtectedLayout>

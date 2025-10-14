@@ -64,7 +64,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const command: SaveFlashcardProposalsCommand = validationResult.data;
 
-    // Step 3: Get Supabase client from locals
+    // Step 3: Check authentication
+    const user = locals.user;
+    if (!user) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Musisz być zalogowany",
+          },
+        } satisfies ErrorResponseDTO),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Step 4: Get Supabase client from locals
     const supabase = locals.supabase;
     if (!supabase) {
       return new Response(
@@ -81,17 +98,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // Step 4: Execute service method
+    // Step 5: Execute service method with authenticated user ID
     const flashcardService = new FlashcardService(supabase);
-    const result: SaveFlashcardProposalsResponseDTO = await flashcardService.saveProposals(command);
+    const result: SaveFlashcardProposalsResponseDTO = await flashcardService.saveProposals(command, user.id);
 
-    // Step 5: Return success response
+    // Step 6: Return success response
     return new Response(JSON.stringify(result), {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    // Step 6: Handle known errors
+    // Step 7: Handle known errors
     if (error instanceof Error) {
       if (error.message === "NOT_FOUND") {
         return new Response(
@@ -124,7 +141,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    // Step 7: Handle unexpected errors
+    // Step 8: Handle unexpected errors
     console.error("Unexpected error in POST /api/flashcards/batch:", error);
     return new Response(
       JSON.stringify({

@@ -1,5 +1,5 @@
 // src/lib/services/flashcard.service.ts
-import { DEFAULT_USER_ID, type SupabaseClient } from "../../db/supabase.client";
+import { type SupabaseClient } from "../../db/supabase.client";
 import type {
   SaveFlashcardProposalsCommand,
   SaveFlashcardProposalsResponseDTO,
@@ -17,10 +17,14 @@ export class FlashcardService {
    * Save AI-generated flashcard proposals in batch
    *
    * @param command - Command containing generation_id and proposals to save
+   * @param userId - The ID of the authenticated user
    * @returns Response with saved count and full flashcard entities
    * @throws Error if generation_id doesn't exist or database operation fails
    */
-  async saveProposals(command: SaveFlashcardProposalsCommand): Promise<SaveFlashcardProposalsResponseDTO> {
+  async saveProposals(
+    command: SaveFlashcardProposalsCommand,
+    userId: string
+  ): Promise<SaveFlashcardProposalsResponseDTO> {
     const { generation_id, proposals } = command;
 
     // Step 1: Verify that generation_id exists
@@ -46,7 +50,7 @@ export class FlashcardService {
       interval: 0,
       ease_factor: 2.5,
       repetitions: 0,
-      user_id: DEFAULT_USER_ID,
+      user_id: userId,
     }));
     console.warn(`Flashcards to insert: ${JSON.stringify(flashcardsToInsert)}`);
 

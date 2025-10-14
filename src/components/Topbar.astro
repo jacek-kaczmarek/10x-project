@@ -1,8 +1,9 @@
 ---
+import type { User } from "@supabase/supabase-js";
 import { LogoutButton } from "./Auth/LogoutButton";
 
 interface Props {
-  user?: { id: string; email: string } | null;
+  user?: User | null;
 }
 
 const { user } = Astro.props;
@@ -16,7 +17,7 @@ const { user } = Astro.props;
       {
         user ? (
           <>
-            <span class="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
+            <span class="text-sm text-muted-foreground hidden sm:inline">{user.email || ""}</span>
             <a href="/generate" class="text-sm font-medium hover:text-primary transition-colors">
               Generuj
             </a>

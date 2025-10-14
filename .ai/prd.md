@@ -49,7 +49,7 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   Tytuł: Rejestracja
   Opis: Jako nowy użytkownik chcę założyć konto, aby uzyskać dostęp do aplikacji.
   Kryteria akceptacji:
-  - Formularz rejestracji zawiera pola email i hasło (min. 8 znaków)
+  - Formularz rejestracji zawiera pola email i hasło (min. 6 znaków)
   - Po poprawnym wypełnieniu i wysłaniu formularza konto zostaje utworzone
   - Użytkownik otrzymuje potwierdzenie rejestracji
 
@@ -61,12 +61,15 @@ Ręczne tworzenie wysokiej jakości fiszek jest czasochłonne i zniechęca do st
   - Poprawne dane przekierowują do pulpitu użytkownika
   - Niepoprawne dane wyświetlają komunikat o błędzie
   - Proces odbywa się na dedykowanej stronie
+  - Odzyskiwanie hasła powinno być możliwe
+  - Pozostałe historyjki nie są dostępne bez logowania, wyjątkiem jest rejestracja (dostępna)
 
 - ID: US-003
   Tytuł: Wylogowanie
   Opis: Jako zalogowany użytkownik chcę się wylogować, aby chronić moje dane.
   Kryteria akceptacji:
   - Po kliknięciu wyloguj sesja zostaje zakończona
+  - Wylogowanie jest możliwe po kliknięciu przycisku w prawym górnym rogu (topbar)
   - Użytkownik zostaje przekierowany na stronę logowania
   - Proces odbywa się na dedykowanej stronie
 

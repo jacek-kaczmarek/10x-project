@@ -1,0 +1,23 @@
+---
+import Layout from "./Layout.astro";
+import Topbar from "../components/Topbar.astro";
+
+interface Props {
+  title?: string;
+}
+
+const { title = "10x Cards" } = Astro.props;
+
+// Require authentication - redirect to /login if not authenticated
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect("/login");
+}
+---
+
+<Layout title={title}>
+  <Topbar user={user} />
+  <main class="container mx-auto px-4 py-8">
+    <slot />
+  </main>
+</Layout>

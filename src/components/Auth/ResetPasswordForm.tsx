@@ -29,8 +29,8 @@ export function ResetPasswordForm({ token, error, success }: ResetPasswordFormPr
 
     if (!newPassword) {
       errors.newPassword = "Hasło jest wymagane";
-    } else if (newPassword.length < 8) {
-      errors.newPassword = "Hasło musi mieć min. 8 znaków";
+    } else if (newPassword.length < 6) {
+      errors.newPassword = "Hasło musi mieć min. 6 znaków";
     }
 
     if (!confirmPassword) {

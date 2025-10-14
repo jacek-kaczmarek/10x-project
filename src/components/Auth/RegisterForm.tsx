@@ -36,8 +36,8 @@ export function RegisterForm({ error, success }: RegisterFormProps) {
 
     if (!password) {
       errors.password = "Hasło jest wymagane";
-    } else if (password.length < 8) {
-      errors.password = "Hasło musi mieć min. 8 znaków";
+    } else if (password.length < 6) {
+      errors.password = "Hasło musi mieć min. 6 znaków";
     }
 
     if (!confirmPassword) {

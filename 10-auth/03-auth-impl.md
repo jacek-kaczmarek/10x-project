@@ -35,7 +35,7 @@
 ## 📋 Implementowane funkcje
 
 ### Formularze zawierają:
-- Client-side walidację (regex email, min. 8 znaków hasła)
+- Client-side walidację (regex email, min. 6 znaków hasła)
 - Wyświetlanie błędów walidacji
 - Wyświetlanie błędów z serwera (przekazywane przez query params)
 - Loading states podczas submitu

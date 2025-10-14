@@ -8,10 +8,11 @@ interface LoginFormProps {
   error?: string;
 }
 
-export function LoginForm({ error }: LoginFormProps) {
+export function LoginForm({ error: serverError }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(serverError || null);
   const [validationErrors, setValidationErrors] = useState<{
     email?: string;
     password?: string;
@@ -21,6 +22,7 @@ export function LoginForm({ error }: LoginFormProps) {
     e.preventDefault();
     setIsLoading(true);
     setValidationErrors({});
+    setError(null);
 
     // Client-side validation
     const errors: { email?: string; password?: string } = {};
@@ -43,9 +45,26 @@ export function LoginForm({ error }: LoginFormProps) {
       return;
     }
 
-    // Submit form (will be handled by Astro endpoint in the future)
-    const form = e.target as HTMLFormElement;
-    form.submit();
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || "Błąd logowania");
+      }
+
+      // Redirect to /generate on success
+      window.location.href = "/generate";
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd";
+      setError(errorMessage);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -54,7 +73,7 @@ export function LoginForm({ error }: LoginFormProps) {
         <CardTitle className="text-2xl">Logowanie</CardTitle>
         <CardDescription>Wprowadź swoje dane aby się zalogować</CardDescription>
       </CardHeader>
-      <form method="POST" action="/api/auth/login" onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">

@@ -7,41 +7,58 @@ import type { ErrorResponseDTO } from "../../types";
 export function handleSupabaseAuthError(error: AuthError): Response {
   let status = 500;
   let code = "AUTH_ERROR";
-  let message = "Wystąpił błąd uwierzytelnienia";
+  let message = "An authentication error occurred";
 
   // Map Supabase error messages to user-friendly messages
   switch (error.message) {
     case "Invalid login credentials":
       status = 401;
       code = "INVALID_CREDENTIALS";
-      message = "Niepoprawny email lub hasło";
+      message = "Invalid email or password";
       break;
     case "Email not confirmed":
       status = 401;
       code = "EMAIL_NOT_CONFIRMED";
-      message = "Konto nie zostało zweryfikowane. Sprawdź email";
+      message = "Account has not been verified. Check your email";
       break;
     case "User already registered":
       status = 409;
       code = "EMAIL_EXISTS";
-      message = "Użytkownik z tym adresem email już istnieje";
+      message = "A user with this email address already exists";
+      break;
+    case "Unable to validate email address: invalid format":
+      status = 400;
+      code = "INVALID_EMAIL";
+      message = "Invalid email address format";
+      break;
+    case "Signup requires a valid password":
+      status = 400;
+      code = "PASSWORD_REQUIRED";
+      message = "Password is required";
+      break;
+    case "Password should be at least 6 characters":
+      status = 400;
+      code = "WEAK_PASSWORD";
+      message = "Password must be at least 6 characters";
       break;
     case "Token expired":
     case "Token has expired or is invalid":
       status = 401;
       code = "TOKEN_EXPIRED";
-      message = "Link resetowania hasła wygasł";
-      break;
-    case "Password should be at least 8 characters":
-      status = 400;
-      code = "WEAK_PASSWORD";
-      message = "Hasło musi mieć minimum 8 znaków";
+      message = "Password reset link has expired";
       break;
     default:
-      console.error("Unhandled Supabase auth error:", error);
-      status = 500;
-      code = "AUTH_ERROR";
-      message = "Wystąpił błąd uwierzytelnienia";
+      // Check if error contains "already registered"
+      if (error.message.toLowerCase().includes("already registered")) {
+        status = 409;
+        code = "EMAIL_EXISTS";
+        message = "A user with this email address already exists";
+      } else {
+        console.error("Unhandled Supabase auth error:", error);
+        status = 500;
+        code = "AUTH_ERROR";
+        message = "An authentication error occurred";
+      }
   }
 
   const errorResponse: ErrorResponseDTO = {

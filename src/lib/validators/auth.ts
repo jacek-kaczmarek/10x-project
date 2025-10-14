@@ -4,31 +4,31 @@ import { z } from "astro/zod";
  * Schema for login request
  */
 export const loginSchema = z.object({
-  email: z.string().email({ message: "Nieprawidłowy format email" }),
-  password: z.string().min(6, { message: "Hasło musi mieć min. 6 znaków" }),
+  email: z.string().email({ message: "Invalid email format" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
 /**
  * Schema for register request
  */
 export const registerSchema = z.object({
-  email: z.string().email({ message: "Nieprawidłowy format email" }),
-  password: z.string().min(6, { message: "Hasło musi mieć min. 6 znaków" }),
+  email: z.string().email({ message: "Invalid email format" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
 /**
  * Schema for forgot password request
  */
 export const forgotPasswordSchema = z.object({
-  email: z.string().email({ message: "Nieprawidłowy format email" }),
+  email: z.string().email({ message: "Invalid email format" }),
 });
 
 /**
  * Schema for reset password request
  */
 export const resetPasswordSchema = z.object({
-  token: z.string().uuid({ message: "Nieprawidłowy token" }),
-  newPassword: z.string().min(6, { message: "Hasło musi mieć min. 6 znaków" }),
+  token: z.string().uuid({ message: "Invalid token" }),
+  newPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

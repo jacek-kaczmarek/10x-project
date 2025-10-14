@@ -28,15 +28,15 @@ export function LoginForm({ error: serverError }: LoginFormProps) {
     const errors: { email?: string; password?: string } = {};
 
     if (!email) {
-      errors.email = "Email jest wymagany";
+      errors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = "Nieprawidłowy format email";
+      errors.email = "Invalid email format";
     }
 
     if (!password) {
-      errors.password = "Hasło jest wymagane";
-    } else if (password.length < 8) {
-      errors.password = "Hasło musi mieć min. 8 znaków";
+      errors.password = "Password is required";
+    } else if (password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -55,13 +55,13 @@ export function LoginForm({ error: serverError }: LoginFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error?.message || "Błąd logowania");
+        throw new Error(data.error?.message || "Login failed");
       }
 
       // Redirect to /generate on success
       window.location.href = "/generate";
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd";
+      const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
       setIsLoading(false);
     }
@@ -70,8 +70,8 @@ export function LoginForm({ error: serverError }: LoginFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Logowanie</CardTitle>
-        <CardDescription>Wprowadź swoje dane aby się zalogować</CardDescription>
+        <CardTitle className="text-2xl">Login</CardTitle>
+        <CardDescription>Enter your credentials to log in</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -87,7 +87,7 @@ export function LoginForm({ error: serverError }: LoginFormProps) {
               id="email"
               name="email"
               type="email"
-              placeholder="nazwa@przyklad.pl"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               aria-invalid={!!validationErrors.email}
@@ -99,9 +99,9 @@ export function LoginForm({ error: serverError }: LoginFormProps) {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Hasło</Label>
+              <Label htmlFor="password">Password</Label>
               <a href="/forgot-password" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Zapomniałeś hasła?
+                Forgot password?
               </a>
             </div>
             <Input
@@ -120,13 +120,13 @@ export function LoginForm({ error: serverError }: LoginFormProps) {
 
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Logowanie..." : "Zaloguj się"}
+            {isLoading ? "Logging in..." : "Log in"}
           </Button>
 
           <p className="text-sm text-center text-muted-foreground">
-            Nie masz konta?{" "}
+            Don&apos;t have an account?{" "}
             <a href="/register" className="text-primary hover:underline">
-              Zarejestruj się
+              Register
             </a>
           </p>
         </CardFooter>

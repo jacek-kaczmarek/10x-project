@@ -8,13 +8,10 @@ const user = Astro.locals.user;
 if (user) {
   return Astro.redirect("/generate");
 }
-
-const error = Astro.url.searchParams.get("error");
-const success = Astro.url.searchParams.get("success");
 ---
 
 <Layout title="Rejestracja - 10x Cards">
   <AuthLayout>
-    <RegisterForm client:load error={error || undefined} success={success || undefined} />
+    <RegisterForm client:load />
   </AuthLayout>
 </Layout>

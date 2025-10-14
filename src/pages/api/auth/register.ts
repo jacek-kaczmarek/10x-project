@@ -1,13 +1,13 @@
 import type { APIRoute } from "astro";
-import { loginSchema } from "../../../lib/validators/auth";
+import { registerSchema } from "../../../lib/validators/auth";
 import { handleSupabaseAuthError } from "../../../lib/utils/auth-errors";
-import type { ErrorResponseDTO, LoginResponseDTO } from "../../../types";
+import type { ErrorResponseDTO, RegisterResponseDTO } from "../../../types";
 
 export const prerender = false;
 
 /**
- * POST /api/auth/login
- * Authenticates user and creates session
+ * POST /api/auth/register
+ * Creates new user account and auto-logs in the user
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
@@ -15,7 +15,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const body = await request.json();
 
     // 2. Validate with Zod
-    const validationResult = loginSchema.safeParse(body);
+    const validationResult = registerSchema.safeParse(body);
 
     if (!validationResult.success) {
       const errorResponse: ErrorResponseDTO = {
@@ -34,20 +34,35 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { email, password } = validationResult.data;
 
-    // 3. Sign in with Supabase
-    const { data, error } = await locals.supabase.auth.signInWithPassword({
+    // 3. Sign up with Supabase (auto-confirmed via config)
+    const { data, error } = await locals.supabase.auth.signUp({
       email,
       password,
     });
 
-    // 4. Handle Supabase errors
+    // 5. Handle Supabase errors
     if (error) {
       return handleSupabaseAuthError(error);
     }
 
-    // 5. Return success response
-    const response: LoginResponseDTO = {
-      message: "Logged in successfully",
+    // 6. Check if user was created successfully
+    if (!data.user) {
+      const errorResponse: ErrorResponseDTO = {
+        error: {
+          code: "REGISTRATION_FAILED",
+          message: "Failed to create account",
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // 7. Return success response
+    const response: RegisterResponseDTO = {
+      message: "Account created successfully. Logged in automatically",
       user: {
         id: data.user.id,
         email: data.user.email || "",
@@ -55,11 +70,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     };
 
     return new Response(JSON.stringify(response), {
-      status: 200,
+      status: 201,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error in POST /api/auth/login:", error);
+    console.error("Error in POST /api/auth/register:", error);
 
     const errorResponse: ErrorResponseDTO = {
       error: {

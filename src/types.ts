@@ -144,6 +144,20 @@ export interface LoginRequestDTO {
   password: string;
 }
 
+export interface RegisterRequestDTO {
+  email: string;
+  password: string;
+}
+
+export interface ForgotPasswordRequestDTO {
+  email: string;
+}
+
+export interface ResetPasswordRequestDTO {
+  token: string;
+  newPassword: string;
+}
+
 // Response DTOs
 export interface AuthUserDTO {
   id: string;
@@ -151,6 +165,11 @@ export interface AuthUserDTO {
 }
 
 export interface LoginResponseDTO {
+  message: string;
+  user: AuthUserDTO;
+}
+
+export interface RegisterResponseDTO {
   message: string;
   user: AuthUserDTO;
 }

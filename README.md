@@ -45,6 +45,12 @@
 - **AI Integration**  
   - Openrouter.ai (supports OpenAI, Anthropic, Google, etc.)
 
+- **Testing**  
+  - Vitest (unit & integration tests)  
+  - React Testing Library (component tests)  
+  - Playwright (E2E tests)  
+  - MSW - Mock Service Worker (API mocking)
+
 - **CI/CD & Hosting**  
   - GitHub Actions  
   - Docker & DigitalOcean  

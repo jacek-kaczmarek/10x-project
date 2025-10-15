@@ -1,0 +1,1 @@
+dopasuj @README.md  i @tech-stack.md dodając informacje (mało teskstu, proszę) wykorzystanych do 1) testów jednostkowych, 2) testów e2e. Bazuj na@test-plan.md 

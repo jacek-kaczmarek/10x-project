@@ -34,10 +34,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { email, password } = validationResult.data;
 
-    // 3. Sign up with Supabase (auto-confirmed via config)
+    // 3. Prepare email redirect URL
+    const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:3000";
+    const emailRedirectTo = `${siteUrl}/auth/callback`;
+
+    // 4. Sign up with Supabase (requires email confirmation)
     const { data, error } = await locals.supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo,
+      },
     });
 
     // 5. Handle Supabase errors
@@ -60,13 +67,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // 7. Return success response
+    // 7. Return success response (user needs to confirm email)
     const response: RegisterResponseDTO = {
-      message: "Account created successfully. Logged in automatically",
+      message: "Account created successfully. Please check your email to confirm your account.",
       user: {
         id: data.user.id,
         email: data.user.email || "",
       },
+      requiresEmailConfirmation: true,
     };
 
     return new Response(JSON.stringify(response), {

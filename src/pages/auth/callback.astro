@@ -1,0 +1,44 @@
+---
+/**
+ * Auth callback page - handles email confirmation and redirects
+ * This page is called after user clicks the confirmation link in their email
+ */
+
+const { url, cookies, redirect, locals } = Astro;
+
+// Get the code from the URL (sent by Supabase in the email link)
+const code = url.searchParams.get("code");
+const error = url.searchParams.get("error");
+const errorDescription = url.searchParams.get("error_description");
+
+// If there's an error in the URL, redirect to login with error message
+if (error) {
+  return redirect(`/login?error=${encodeURIComponent(errorDescription || error)}`);
+}
+
+// If no code, redirect to login
+if (!code) {
+  return redirect("/login?error=Invalid+confirmation+link");
+}
+
+try {
+  // Exchange the code for a session
+  const { data, error: exchangeError } = await locals.supabase.auth.exchangeCodeForSession(code);
+
+  if (exchangeError) {
+    console.error("Error exchanging code for session:", exchangeError);
+    return redirect(`/login?error=${encodeURIComponent(exchangeError.message)}`);
+  }
+
+  if (!data.session) {
+    return redirect("/login?error=Failed+to+create+session");
+  }
+
+  // Session is automatically set by middleware via cookies
+  // Redirect to the main application page
+  return redirect("/login?success=Email+confirmed+successfully.+Please+log+in.");
+} catch (err) {
+  console.error("Error in auth callback:", err);
+  return redirect("/login?error=An+error+occurred+during+confirmation");
+}
+---

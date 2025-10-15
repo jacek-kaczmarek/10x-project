@@ -11,10 +11,11 @@ if (user) {
 
 // Handle error/success messages from query params
 const error = Astro.url.searchParams.get("error");
+const success = Astro.url.searchParams.get("success");
 ---
 
 <Layout title="Logowanie - 10x Cards">
   <AuthLayout>
-    <LoginForm client:load error={error || undefined} />
+    <LoginForm client:load error={error || undefined} success={success || undefined} />
   </AuthLayout>
 </Layout>

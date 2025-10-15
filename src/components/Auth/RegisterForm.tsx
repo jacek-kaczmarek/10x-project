@@ -15,6 +15,7 @@ export function RegisterForm({ error: initialError }: RegisterFormProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(initialError || null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<{
     email?: string;
     password?: string;
@@ -26,6 +27,7 @@ export function RegisterForm({ error: initialError }: RegisterFormProps) {
     setIsLoading(true);
     setValidationErrors({});
     setApiError(null);
+    setSuccessMessage(null);
 
     // Client-side validation
     const errors: { email?: string; password?: string; confirmPassword?: string } = {};
@@ -77,9 +79,17 @@ export function RegisterForm({ error: initialError }: RegisterFormProps) {
         return;
       }
 
-      // Handle success response - user is now logged in
-      // Redirect to /generate (user is auto-logged in)
-      window.location.href = "/generate";
+      // Handle success response
+      const successData = data as RegisterResponseDTO;
+
+      if (successData.requiresEmailConfirmation) {
+        // Email confirmation required - show success message
+        setSuccessMessage(successData.message);
+        setIsLoading(false);
+      } else {
+        // Auto-login (fallback for when email confirmation is disabled)
+        window.location.href = "/generate";
+      }
     } catch (error) {
       console.error("Registration error:", error);
       setApiError("An error occurred during registration. Please try again");
@@ -98,6 +108,12 @@ export function RegisterForm({ error: initialError }: RegisterFormProps) {
           {apiError && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
               {apiError}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="p-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
+              {successMessage}
             </div>
           )}
 

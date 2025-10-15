@@ -6,13 +6,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 interface LoginFormProps {
   error?: string;
+  success?: string;
 }
 
-export function LoginForm({ error: serverError }: LoginFormProps) {
+export function LoginForm({ error: serverError, success: serverSuccess }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(serverError || null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(serverSuccess || null);
   const [validationErrors, setValidationErrors] = useState<{
     email?: string;
     password?: string;
@@ -23,6 +25,7 @@ export function LoginForm({ error: serverError }: LoginFormProps) {
     setIsLoading(true);
     setValidationErrors({});
     setError(null);
+    setSuccessMessage(null);
 
     // Client-side validation
     const errors: { email?: string; password?: string } = {};
@@ -78,6 +81,12 @@ export function LoginForm({ error: serverError }: LoginFormProps) {
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="p-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
+              {successMessage}
             </div>
           )}
 

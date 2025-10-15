@@ -172,6 +172,7 @@ export interface LoginResponseDTO {
 export interface RegisterResponseDTO {
   message: string;
   user: AuthUserDTO;
+  requiresEmailConfirmation?: boolean;
 }
 
 export interface MessageResponseDTO {

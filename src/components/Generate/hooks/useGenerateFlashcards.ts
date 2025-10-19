@@ -25,9 +25,6 @@ export function useGenerateFlashcards() {
         source_text: sourceText,
       };
 
-      //pause
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       const response = await fetch("/api/generations", {
         method: "POST",
         headers: {

@@ -51,6 +51,7 @@ export default function FlashcardItem({ proposal, index, onChange, onRemove, onT
         proposal.wasEdited && "border-primary/50 bg-primary/5",
         proposal.wasAccepted && "border-green-500/50 bg-green-500/5"
       )}
+      data-test-id={`flashcard-item-${index}`}
     >
       <div className="p-3 pb-2 flex items-center justify-between">
         <h3 className="text-xs font-medium text-muted-foreground">
@@ -70,6 +71,7 @@ export default function FlashcardItem({ proposal, index, onChange, onRemove, onT
                 ? "bg-green-600 text-white hover:bg-green-700"
                 : "text-muted-foreground hover:bg-green-600/10 hover:text-green-600"
             )}
+            data-test-id={`flashcard-accept-button-${index}`}
           >
             <Check className="h-3.5 w-3.5" />
           </Button>
@@ -84,6 +86,7 @@ export default function FlashcardItem({ proposal, index, onChange, onRemove, onT
                 ? "text-muted-foreground hover:bg-muted"
                 : "text-blue-600 hover:bg-blue-600/10 hover:text-blue-700"
             )}
+            data-test-id={`flashcard-edit-button-${index}`}
           >
             {isEditing ? <X className="h-3.5 w-3.5" /> : <Edit className="h-3.5 w-3.5" />}
           </Button>
@@ -93,6 +96,7 @@ export default function FlashcardItem({ proposal, index, onChange, onRemove, onT
             onClick={onRemove}
             aria-label={`Remove flashcard ${index}`}
             className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            data-test-id={`flashcard-remove-button-${index}`}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
@@ -114,6 +118,7 @@ export default function FlashcardItem({ proposal, index, onChange, onRemove, onT
                 placeholder="Question or term"
                 aria-invalid={!frontValid}
                 className={cn("h-9 text-sm", !frontValid && "border-destructive focus-visible:ring-destructive")}
+                data-test-id={`flashcard-front-input-${index}`}
               />
               <div className="flex justify-between text-xs min-h-[16px]">
                 <span className={cn("text-muted-foreground", !frontValid && "text-destructive")}>
@@ -140,6 +145,7 @@ export default function FlashcardItem({ proposal, index, onChange, onRemove, onT
                   !backValid && "border-destructive focus-visible:ring-destructive"
                 )}
                 aria-invalid={!backValid}
+                data-test-id={`flashcard-back-input-${index}`}
               />
               <div className="flex justify-between text-xs min-h-[16px]">
                 <span className={cn("text-muted-foreground", !backValid && "text-destructive")}>
@@ -155,13 +161,23 @@ export default function FlashcardItem({ proposal, index, onChange, onRemove, onT
           <>
             <div className="space-y-1">
               <div className="text-xs font-medium">Front</div>
-              <div className="text-sm leading-snug break-words min-h-[36px] flex items-center">{front}</div>
+              <div
+                className="text-sm leading-snug break-words min-h-[36px] flex items-center"
+                data-test-id={`flashcard-front-display-${index}`}
+              >
+                {front}
+              </div>
               <div className="min-h-[16px]"></div>
             </div>
 
             <div className="space-y-1 flex-1 flex flex-col">
               <div className="text-xs font-medium">Back</div>
-              <div className="text-sm leading-snug break-words flex-1 overflow-y-auto">{back}</div>
+              <div
+                className="text-sm leading-snug break-words flex-1 overflow-y-auto"
+                data-test-id={`flashcard-back-display-${index}`}
+              >
+                {back}
+              </div>
               <div className="min-h-[16px]"></div>
             </div>
           </>

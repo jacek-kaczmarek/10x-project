@@ -36,7 +36,7 @@ export default function GenerationForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" data-test-id="generation-form">
       <div className="space-y-2">
         <label htmlFor="source-text" className="text-sm font-medium">
           Source Text
@@ -51,6 +51,7 @@ export default function GenerationForm({
           className="min-h-[120px] max-h-[180px] resize-y"
           aria-invalid={validationError ? "true" : "false"}
           aria-describedby={validationError ? "validation-error" : "char-count"}
+          data-test-id="generation-source-text-input"
         />
 
         <div className="flex items-center justify-between text-sm">
@@ -66,7 +67,12 @@ export default function GenerationForm({
         </div>
       </div>
 
-      <Button type="submit" disabled={!isValid || loading} className="w-full sm:w-auto">
+      <Button
+        type="submit"
+        disabled={!isValid || loading}
+        className="w-full sm:w-auto"
+        data-test-id="generation-submit-button"
+      >
         {loading ? "Generating..." : "Generate Flashcards"}
       </Button>
     </form>

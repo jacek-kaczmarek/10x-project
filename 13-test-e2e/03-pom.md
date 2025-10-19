@@ -1,0 +1,1 @@
+do kluczowych elementów utwtórz dedykowane klasy wg wzorca POM - @playwright-e2e-testing.mdc 

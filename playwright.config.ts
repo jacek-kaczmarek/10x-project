@@ -1,8 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
 import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const authFile = path.join(__dirname, "playwright/.auth/user.json");
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -27,7 +32,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: "http://localhost:4321",
+    baseURL: process.env.BASE_URL || "http://localhost:4321",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
@@ -38,16 +43,27 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    // Setup project - runs once to authenticate
+    {
+      name: "setup",
+      testMatch: /.*\.setup\.ts/,
+    },
+    // Authenticated tests - reuse auth state from setup
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        // Use signed-in state from setup
+        storageState: authFile,
+      },
+      dependencies: ["setup"], // Run setup project first
     },
   ],
 
   /* Run your local dev server before starting the tests */
   webServer: {
     command: "npm run dev",
-    url: "http://localhost:4321",
+    url: process.env.BASE_URL || "http://localhost:4321",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

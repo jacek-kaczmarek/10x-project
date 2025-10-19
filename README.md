@@ -4,19 +4,20 @@
 
 ## Table of Contents
 
-1. [Project Description](#project-description)  
-2. [Tech Stack](#tech-stack)  
-3. [Getting Started](#getting-started)  
-4. [Available Scripts](#available-scripts)  
-5. [Project Scope](#project-scope)  
-6. [Project Status](#project-status)  
-7. [License](#license)  
+1. [Project Description](#project-description)
+2. [Tech Stack](#tech-stack)
+3. [Getting Started](#getting-started)
+4. [Available Scripts](#available-scripts)
+5. [Project Scope](#project-scope)
+6. [Project Status](#project-status)
+7. [License](#license)
 
 ---
 
 ## Project Description
 
 10x Cards empowers learners to generate high-quality flashcards in seconds, either by:
+
 - Pasting 1,000–10,000 characters of text to auto-generate 10 AI-powered flashcard candidates (with progress feedback).
 - Editing generated candidates on the client-side before saving collections.
 - Manually creating custom flashcards (front/back) individually or as collections.
@@ -28,32 +29,32 @@
 
 ## Tech Stack
 
-- **Frontend**  
-  - Astro 5  
-  - React 19  
-  - TypeScript 5  
-  - Tailwind CSS 4  
-  - Shadcn/ui (Radix + Tailwind components)  
-  - Lucide-React (icons)  
-  - Radix Slot  
-  - tailwind-merge  
-  - tw-animate-css  
+- **Frontend**
+  - Astro 5
+  - React 19
+  - TypeScript 5
+  - Tailwind CSS 4
+  - Shadcn/ui (Radix + Tailwind components)
+  - Lucide-React (icons)
+  - Radix Slot
+  - tailwind-merge
+  - tw-animate-css
 
-- **Backend**  
-  - Supabase (PostgreSQL & Auth SDK)  
+- **Backend**
+  - Supabase (PostgreSQL & Auth SDK)
 
-- **AI Integration**  
+- **AI Integration**
   - Openrouter.ai (supports OpenAI, Anthropic, Google, etc.)
 
-- **Testing**  
-  - Vitest (unit & integration tests)  
-  - React Testing Library (component tests)  
-  - Playwright (E2E tests)  
+- **Testing**
+  - Vitest (unit & integration tests)
+  - React Testing Library (component tests)
+  - Playwright (E2E tests)
   - MSW - Mock Service Worker (API mocking)
 
-- **CI/CD & Hosting**  
-  - GitHub Actions  
-  - Docker & DigitalOcean  
+- **CI/CD & Hosting**
+  - GitHub Actions
+  - Docker & DigitalOcean
 
 ---
 
@@ -61,8 +62,8 @@
 
 ### Prerequisites
 
-- **Node.js** v22.14.0 (see `.nvmrc`)  
-- **npm** (bundled with Node)  
+- **Node.js** v22.14.0 (see `.nvmrc`)
+- **npm** (bundled with Node)
 - A **Supabase** project with:
   - `SUPABASE_URL`
   - `SUPABASE_ANON_KEY`
@@ -99,15 +100,15 @@ Open your browser at `http://localhost:3000` (default Astro port).
 
 ## Available Scripts
 
-| Command           | Description                             |
-| ----------------- | --------------------------------------- |
-| `npm run dev`     | Start Astro development server          |
-| `npm run build`   | Build for production                    |
-| `npm run preview` | Preview production build                |
-| `npm run astro`   | Astro CLI (e.g., `astro add`)           |
-| `npm run lint`    | Run ESLint                              |
-| `npm run lint:fix`| Run ESLint with auto-fix                |
-| `npm run format`  | Format code with Prettier               |
+| Command            | Description                    |
+| ------------------ | ------------------------------ |
+| `npm run dev`      | Start Astro development server |
+| `npm run build`    | Build for production           |
+| `npm run preview`  | Preview production build       |
+| `npm run astro`    | Astro CLI (e.g., `astro add`)  |
+| `npm run lint`     | Run ESLint                     |
+| `npm run lint:fix` | Run ESLint with auto-fix       |
+| `npm run format`   | Format code with Prettier      |
 
 ---
 
@@ -115,23 +116,23 @@ Open your browser at `http://localhost:3000` (default Astro port).
 
 ### Features
 
-- User authentication (register, login, logout)  
-- AI flashcard candidate generation (input validation, progress bar)  
-- Client-side editing of AI-generated candidates  
-- Collection saving with source tracking (AI, AI-edited, manual)  
-- Manual flashcard creation (individual or batch)  
-- Collection management: pagination, search, edit, delete  
-- Spaced-repetition study sessions  
-- Input validation & clear error messaging  
-- Informational tooltips on hover  
+- User authentication (register, login, logout)
+- AI flashcard candidate generation (input validation, progress bar)
+- Client-side editing of AI-generated candidates
+- Collection saving with source tracking (AI, AI-edited, manual)
+- Manual flashcard creation (individual or batch)
+- Collection management: pagination, search, edit, delete
+- Spaced-repetition study sessions
+- Input validation & clear error messaging
+- Informational tooltips on hover
 
 ### Boundaries
 
-- Relies on third-party spaced-repetition library (no custom algorithm)  
-- No PDF/DOCX imports or rich-text formatting  
-- No sharing of sets, multi-deck, or tagging support  
-- No mobile app or native client  
-- No subscription or monetization features  
+- Relies on third-party spaced-repetition library (no custom algorithm)
+- No PDF/DOCX imports or rich-text formatting
+- No sharing of sets, multi-deck, or tagging support
+- No mobile app or native client
+- No subscription or monetization features
 
 ---
 

@@ -38,3 +38,5 @@ playwright/.cache/
 # Temporary files
 *.tmp
 .cache/
+.env
+.env*

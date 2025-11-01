@@ -58,9 +58,8 @@ src/
         └── test-utils.tsx           ← Pomocnicze funkcje
 
 e2e/
+├── auth.setup.ts                    ← Setup autoryzacji (raz dla całej sesji)
 ├── example.spec.ts                  ← Przykładowy test E2E
-├── fixtures/
-│   └── auth.ts                      ← Fixture dla autoryzacji
 └── pages/
     ├── base.page.ts                 ← Bazowy Page Object
     └── login.page.ts                ← Page Object dla loginu
@@ -91,10 +90,8 @@ describe('MyComponent', () => {
 import { http, HttpResponse } from "msw";
 
 export const handlers = [
-  http.get('/api/users', () => {
-    return HttpResponse.json([
-      { id: 1, name: 'John' }
-    ]);
+  http.get("/api/users", () => {
+    return HttpResponse.json([{ id: 1, name: "John" }]);
   }),
 ];
 ```
@@ -102,31 +99,35 @@ export const handlers = [
 ### Test E2E z Page Object
 
 ```typescript
-// e2e/login.spec.ts
-import { test, expect } from '@playwright/test';
-import { LoginPage } from './pages/login.page';
+// e2e/my-feature.spec.ts
+import { test, expect } from "@playwright/test";
+import { GeneratePage } from "./pages/generate.page";
 
-test('user can login', async ({ page }) => {
-  const loginPage = new LoginPage(page);
-  await loginPage.goto();
-  await loginPage.login('test@example.com', 'password');
-  await expect(page).toHaveURL('/generate');
+test("user can generate flashcards", async ({ page }) => {
+  // Sesja jest automatycznie zalogowana dzięki auth.setup.ts
+  const generatePage = new GeneratePage(page);
+  await generatePage.goto();
+  await generatePage.generateFlashcards("Sample text...");
+  await expect(generatePage.proposalsList).toBeVisible();
 });
 ```
 
 ## Narzędzia developerskie
 
 ### Vitest UI
+
 - Otwórz `http://localhost:51204/__vitest__/` (automatycznie)
 - Interaktywne debugowanie testów
 - Filtrowanie i ponowne uruchamianie testów
 
 ### Playwright UI
+
 - Wizualna nawigacja po testach
 - Krok po kroku debugowanie
 - Podgląd selektorów
 
 ### Playwright Codegen
+
 - Automatyczne generowanie testów
 - Nagrywanie akcji użytkownika
 - Eksport do kodu
@@ -138,7 +139,7 @@ test('user can login', async ({ page }) => {
 ✅ Izoluj testy - każdy test powinien być niezależny  
 ✅ Mockuj API zamiast prawdziwych zapytań  
 ✅ Testuj zachowanie, nie implementację  
-✅ Używaj Page Object Model dla testów E2E  
+✅ Używaj Page Object Model dla testów E2E
 
 ## Wsparcie
 
@@ -148,4 +149,3 @@ test('user can login', async ({ page }) => {
 ---
 
 **Środowisko gotowe do testowania! 🎯**
-

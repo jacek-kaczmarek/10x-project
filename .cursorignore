@@ -1,4 +1,5 @@
-.env*
+.env.test
+.env
 .history/
 playwright/.auth/
 playwright/.cache/

@@ -211,13 +211,20 @@ export default function GenerateView() {
 
           {showSaveButtons && (
             <div className="flex gap-3">
-              <Button onClick={() => handleSaveFlashcards(false)} disabled={isSaving} size="lg" variant="outline">
+              <Button
+                onClick={() => handleSaveFlashcards(false)}
+                disabled={isSaving}
+                size="lg"
+                variant="outline"
+                data-test-id="flashcard-save-all-button"
+              >
                 {isSaving ? "Saving..." : `Save all (${activeProposalsCount})`}
               </Button>
               <Button
                 onClick={() => handleSaveFlashcards(true)}
                 disabled={isSaving || acceptedProposalsCount === 0}
                 size="lg"
+                data-test-id="flashcard-save-accepted-button"
               >
                 {isSaving ? "Saving..." : `Save accepted (${acceptedProposalsCount})`}
               </Button>

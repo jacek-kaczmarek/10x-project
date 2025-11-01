@@ -19,9 +19,17 @@ setup("authenticate", async ({ page }) => {
   // Wait for React component to hydrate
   await page.waitForSelector('input[name="email"]', { state: "visible" });
 
-  // Fill in login form
-  await page.fill('input[name="email"]', testEmail);
-  await page.fill('input[name="password"]', testPassword);
+  // Fill in login form - use type instead of fill to trigger React onChange events
+  const emailInput = page.locator('input[name="email"]');
+  const passwordInput = page.locator('input[name="password"]');
+
+  await emailInput.click();
+  await emailInput.fill(testEmail);
+  await passwordInput.click();
+  await passwordInput.fill(testPassword);
+
+  // Wait a bit for React state to update
+  await page.waitForTimeout(500);
 
   // Submit and wait for navigation
   await page.getByRole("button", { name: /log in/i }).click();

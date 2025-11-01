@@ -59,6 +59,8 @@ src/
 
 e2e/
 ├── auth.setup.ts                    ← Setup autoryzacji (raz dla całej sesji)
+├── global.teardown.ts               ← Czyszczenie bazy danych (po wszystkich testach)
+├── README.md                        ← Dokumentacja konfiguracji E2E
 ├── example.spec.ts                  ← Przykładowy test E2E
 └── pages/
     ├── base.page.ts                 ← Bazowy Page Object
@@ -141,10 +143,26 @@ test("user can generate flashcards", async ({ page }) => {
 ✅ Testuj zachowanie, nie implementację  
 ✅ Używaj Page Object Model dla testów E2E
 
+## Konfiguracja E2E Tests
+
+Aby uruchomić testy E2E, skonfiguruj plik `.env.test`:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLIC_KEY=your-key
+E2E_USERNAME_ID=test-user-uuid
+E2E_USERNAME=playwright@test.xyz
+E2E_PASSWORD=your-password
+OPENROUTER_API_KEY=your-api-key
+```
+
+📖 Szczegółowa instrukcja: `e2e/README.md`
+
 ## Wsparcie
 
 📖 Pełna dokumentacja: `README.test.md`  
-📝 Szczegóły setup: `11-test-plan/12-prepare-env.md`
+📝 Szczegóły setup: `11-test-plan/12-prepare-env.md`  
+🧹 Konfiguracja E2E: `e2e/README.md`
 
 ---
 

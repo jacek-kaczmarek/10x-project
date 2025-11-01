@@ -98,6 +98,27 @@ The project uses Playwright's **Storage State** pattern for authentication:
 
 To test unauthenticated flows, create a separate project in `playwright.config.ts` without `storageState`.
 
+### Database Cleanup (Teardown)
+
+The project includes automatic database cleanup after E2E tests:
+
+- `e2e/global.teardown.ts` runs once after all tests complete
+- Automatically deletes test data from Supabase (flashcards, generations, error logs)
+- Ensures clean state for next test run
+- Only affects data for the test user specified in `E2E_USERNAME_ID`
+
+This requires proper configuration in `.env.test`:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLIC_KEY=your-public-anon-key
+E2E_USERNAME_ID=your-test-user-uuid
+E2E_USERNAME=playwright@test.xyz
+E2E_PASSWORD=your-password
+```
+
+See `e2e/README.md` for detailed setup instructions.
+
 ## Test Structure
 
 ```
@@ -114,7 +135,9 @@ To test unauthenticated flows, create a separate project in `playwright.config.t
 │       └── **/*.test.tsx         # Component tests
 ├── e2e/
 │   ├── auth.setup.ts             # Authentication setup (runs once)
+│   ├── global.teardown.ts        # Database cleanup (runs once after all tests)
 │   ├── pages/                    # Page Object Models
+│   ├── README.md                 # E2E setup documentation
 │   └── *.spec.ts                 # E2E test specs
 ├── playwright/.auth/             # Stored auth state (gitignored)
 ├── vitest.config.ts              # Vitest configuration

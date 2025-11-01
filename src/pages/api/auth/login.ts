@@ -46,6 +46,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     // 5. Return success response
+    // Note: Cookies are automatically set by middleware when signInWithPassword() is called
     const response: LoginResponseDTO = {
       message: "Logged in successfully",
       user: {

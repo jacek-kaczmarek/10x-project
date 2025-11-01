@@ -53,6 +53,7 @@ export function LoginForm({ error: serverError, success: serverSuccess }: LoginF
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "same-origin", // Ensure cookies are sent/received
       });
 
       const data = await response.json();
@@ -61,7 +62,9 @@ export function LoginForm({ error: serverError, success: serverSuccess }: LoginF
         throw new Error(data.error?.message || "Login failed");
       }
 
-      // Redirect to /generate on success
+      // Force full page navigation to /generate
+      // This ensures auth cookies are properly set before middleware runs
+      // Using location.href instead of client-side routing for E2E test reliability
       window.location.href = "/generate";
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";

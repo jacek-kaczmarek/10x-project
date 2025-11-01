@@ -29,6 +29,9 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: "html",
 
+  /* Global teardown - runs once after all tests */
+  globalTeardown: "./e2e/global.teardown.ts",
+
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -62,7 +65,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: "npm run dev",
+    command: "npm run dev:e2e",
     url: process.env.BASE_URL || "http://localhost:4321",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

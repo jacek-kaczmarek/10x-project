@@ -4,7 +4,7 @@
  * This page is called after user clicks the confirmation link in their email
  */
 
-const { url, cookies, redirect, locals } = Astro;
+const { url, redirect, locals } = Astro;
 
 // Get the code from the URL (sent by Supabase in the email link)
 const code = url.searchParams.get("code");

@@ -29,11 +29,22 @@ export interface ResponseFormat {
 }
 
 /**
+ * OpenRouter API response structure
+ */
+interface OpenRouterResponse {
+  choices?: {
+    message?: {
+      content?: string;
+    };
+  }[];
+}
+
+/**
  * Options for chat completion requests
  */
 export interface ChatCompletionOptions {
   model?: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
   responseFormat?: ResponseFormat;
 }
 
@@ -76,7 +87,7 @@ export class OpenRouterResponseParseError extends Error {
 export class OpenRouterSchemaValidationError extends Error {
   constructor(
     message: string,
-    public validationErrors?: any[]
+    public validationErrors?: Record<string, unknown>[]
   ) {
     super(message);
     this.name = "OpenRouterSchemaValidationError";
@@ -165,7 +176,7 @@ export class OpenRouterService {
    * @param options - Optional parameters for the request
    * @returns Parsed and validated response from the API
    */
-  public async sendChatCompletion(messages: ChatMessage[], options?: ChatCompletionOptions): Promise<any> {
+  public async sendChatCompletion(messages: ChatMessage[], options?: ChatCompletionOptions): Promise<unknown> {
     // Validate input
     if (!messages || messages.length === 0) {
       throw new Error("Messages array cannot be empty");
@@ -199,8 +210,8 @@ export class OpenRouterService {
    * @param options - Optional parameters
    * @returns Request payload object
    */
-  private buildPayload(messages: ChatMessage[], options?: ChatCompletionOptions): Record<string, any> {
-    const payload: Record<string, any> = {
+  private buildPayload(messages: ChatMessage[], options?: ChatCompletionOptions): Record<string, unknown> {
+    const payload: Record<string, unknown> = {
       model: options?.model || this.model,
       messages: messages.map((msg) => ({
         role: msg.role,
@@ -226,7 +237,7 @@ export class OpenRouterService {
    * @param payload - Request payload
    * @returns API response data
    */
-  private async executeRequest(payload: Record<string, any>): Promise<any> {
+  private async executeRequest(payload: Record<string, unknown>): Promise<unknown> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
@@ -275,7 +286,7 @@ export class OpenRouterService {
       }
 
       const status = axiosError.response.status;
-      const responseData = axiosError.response.data as any;
+      const responseData = axiosError.response.data as Record<string, unknown>;
 
       // 401 Unauthorized - invalid API key
       if (status === 401) {
@@ -298,11 +309,25 @@ export class OpenRouterService {
       // 5xx Server errors
       if (status >= 500) {
         console.error(`Server error ${status} on attempt ${attempt + 1}:`, responseData);
-        return new Error(`Server error: ${status} - ${responseData?.error?.message || "Unknown server error"}`);
+        const errorMessage =
+          (responseData?.error &&
+          typeof responseData.error === "object" &&
+          "message" in responseData.error &&
+          typeof responseData.error.message === "string"
+            ? responseData.error.message
+            : null) || "Unknown server error";
+        return new Error(`Server error: ${status} - ${errorMessage}`);
       }
 
       // Other HTTP errors
-      return new Error(`HTTP error ${status}: ${responseData?.error?.message || axiosError.message}`);
+      const errorMessage =
+        (responseData?.error &&
+        typeof responseData.error === "object" &&
+        "message" in responseData.error &&
+        typeof responseData.error.message === "string"
+          ? responseData.error.message
+          : null) || axiosError.message;
+      return new Error(`HTTP error ${status}: ${errorMessage}`);
     }
 
     // Non-axios errors
@@ -318,20 +343,23 @@ export class OpenRouterService {
    * @param headers - Response headers
    * @returns Retry delay in milliseconds
    */
-  private getRetryAfter(headers: Record<string, any>): number {
+  private getRetryAfter(headers: Record<string, string | string[] | undefined>): number {
     const retryAfter = headers["retry-after"];
     if (!retryAfter) {
       return 0;
     }
 
+    // Handle array case (shouldn't happen but TypeScript requires it)
+    const retryAfterValue = Array.isArray(retryAfter) ? retryAfter[0] : retryAfter;
+
     // If it's a number of seconds
-    const seconds = parseInt(retryAfter, 10);
+    const seconds = parseInt(retryAfterValue, 10);
     if (!isNaN(seconds)) {
       return seconds * 1000;
     }
 
     // If it's a date string
-    const retryDate = new Date(retryAfter);
+    const retryDate = new Date(retryAfterValue);
     if (!isNaN(retryDate.getTime())) {
       return Math.max(0, retryDate.getTime() - Date.now());
     }
@@ -344,15 +372,26 @@ export class OpenRouterService {
    * @param response - Raw API response
    * @returns Parsed content from the response
    */
-  private parseResponse(response: any): any {
+  private parseResponse(response: unknown): unknown {
     try {
+      // Type guard for response structure
+      const isOpenRouterResponse = (r: unknown): r is OpenRouterResponse => {
+        return (
+          typeof r === "object" &&
+          r !== null &&
+          "choices" in r &&
+          Array.isArray((r as OpenRouterResponse).choices) &&
+          (r as OpenRouterResponse).choices.length > 0
+        );
+      };
+
       // Validate response structure
-      if (!response || !response.choices || response.choices.length === 0) {
+      if (!isOpenRouterResponse(response)) {
         throw new OpenRouterResponseParseError("Invalid response structure: no choices found");
       }
 
       const firstChoice = response.choices[0];
-      if (!firstChoice.message || !firstChoice.message.content) {
+      if (!firstChoice?.message?.content) {
         throw new OpenRouterResponseParseError("Invalid response structure: no message content found");
       }
 
@@ -385,7 +424,7 @@ export class OpenRouterService {
    * @param data - Parsed response data
    * @param responseFormat - Response format with JSON schema
    */
-  private validateResponseFormat(data: any, responseFormat: ResponseFormat): void {
+  private validateResponseFormat(data: unknown, responseFormat: ResponseFormat): void {
     try {
       const schema = responseFormat.json_schema.schema;
       const validate: ValidateFunction = this.ajv.compile(schema);

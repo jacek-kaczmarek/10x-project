@@ -538,7 +538,7 @@ export default function LogoutButton({ className }: Props) {
       disabled={isLoading}
       className={className}
     >
-      {isLoading ? 'Wylogowywanie...' : 'Wyloguj'}
+      {isLoading ? 'Logging out...' : 'Log out'}
     </Button>
   )
 }

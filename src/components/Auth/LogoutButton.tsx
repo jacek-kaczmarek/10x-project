@@ -27,7 +27,7 @@ export function LogoutButton() {
 
   return (
     <Button variant="outline" size="sm" onClick={handleLogout} disabled={isLoading}>
-      {isLoading ? "Wylogowywanie..." : "Wyloguj"}
+      {isLoading ? "Logging out..." : "Log out"}
     </Button>
   );
 }

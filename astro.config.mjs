@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from "astro/config";
+import process from "node:process";
 
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
@@ -22,8 +23,7 @@ export default defineConfig({
   adapter:
     process.env.CF_PAGES === "1"
       ? cloudflare({
-          mode: "directory",
-          functionPerRoute: false,
+          imageService: "compile",
         })
       : node({
           mode: "standalone",

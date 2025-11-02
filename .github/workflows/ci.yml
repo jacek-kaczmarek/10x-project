@@ -8,6 +8,7 @@ on:
   # Umożliw uruchomienie manualne
   workflow_dispatch:
 
+    
 jobs:
   test-and-build:
     name: Test & Build

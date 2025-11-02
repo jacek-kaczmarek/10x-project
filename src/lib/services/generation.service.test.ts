@@ -11,22 +11,6 @@ vi.mock("../../db/supabase.client", () => ({
   },
 }));
 
-// Mock crypto module
-vi.mock("crypto", () => {
-  const mockCreateHash = vi.fn(() => ({
-    update: vi.fn(() => ({
-      digest: vi.fn(() => "mocked-hash-value"),
-    })),
-  }));
-
-  return {
-    default: {
-      createHash: mockCreateHash,
-    },
-    createHash: mockCreateHash,
-  };
-});
-
 // Import after mocks are set up
 import { GenerationService } from "./generation.service";
 import { OpenRouterService } from "./openrouter.service";

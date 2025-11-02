@@ -1,5 +1,4 @@
 // src/lib/services/generation.service.ts
-import { createHash } from "crypto";
 import { type SupabaseClient } from "../../../src/db/supabase.client";
 import type { CreateGenerationResponseDTO, FlashcardProposalDTO, GenerationInsert } from "../../types";
 import { OpenRouterService } from "./openrouter.service";
@@ -33,7 +32,7 @@ export class GenerationService {
    */
   async createGeneration(sourceText: string, userId: string): Promise<CreateGenerationResponseDTO> {
     // Calculate SHA-256 hash of source text
-    const sourceTextHash = this.calculateHash(sourceText);
+    const sourceTextHash = await this.calculateHash(sourceText);
 
     try {
       // Generate flashcards using AI (mocked for now)
@@ -80,12 +79,19 @@ export class GenerationService {
   }
 
   /**
-   * Calculates SHA-256 hash of the source text
+   * Calculates SHA-256 hash of the source text using Web Crypto API
+   * Compatible with both Node.js and Cloudflare Workers
    * @param text - Text to hash
    * @returns Hex-encoded hash string
    */
-  private calculateHash(text: string): string {
-    return createHash("sha256").update(text).digest("hex");
+  private async calculateHash(text: string): Promise<string> {
+    // Use Web Crypto API (works in Node.js 15+ and Cloudflare Workers)
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    return hashHex;
   }
 
   /**
@@ -116,17 +122,18 @@ export class GenerationService {
       );
 
       // Extract flashcards from response
-      if (!response || !response.flashcards || !Array.isArray(response.flashcards)) {
+      const responseData = response as { flashcards?: FlashcardProposalDTO[] };
+      if (!responseData || !responseData.flashcards || !Array.isArray(responseData.flashcards)) {
         throw new Error("Invalid response structure from AI service");
       }
 
       // Validate we got exactly the expected number of flashcards
       const expectedCount = FLASHCARD_GENERATION_PARAMS.flashcardsCount;
-      if (response.flashcards.length !== expectedCount) {
-        throw new Error(`Expected ${expectedCount} flashcards, received ${response.flashcards.length}`);
+      if (responseData.flashcards.length !== expectedCount) {
+        throw new Error(`Expected ${expectedCount} flashcards, received ${responseData.flashcards.length}`);
       }
 
-      return response.flashcards as FlashcardProposalDTO[];
+      return responseData.flashcards;
     } catch (error) {
       // Re-throw with context
       if (error instanceof Error) {

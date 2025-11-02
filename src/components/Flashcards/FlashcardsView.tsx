@@ -38,12 +38,12 @@ export default function FlashcardsView() {
           <h1 className="mb-2 text-3xl font-bold">My Flashcards</h1>
           <p className="text-muted-foreground">Browse, search, and manage your saved flashcards</p>
         </div>
-        <Button asChild size="lg">
-          <a href="/flashcards/new" aria-label="Add new flashcard manually">
+        <a href="/flashcards/new">
+          <Button size="lg" aria-label="Add new flashcard manually">
             <Plus className="size-4" />
             Add Flashcard
-          </a>
-        </Button>
+          </Button>
+        </a>
       </div>
 
       {/* Search */}

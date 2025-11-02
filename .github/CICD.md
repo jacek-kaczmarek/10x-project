@@ -13,11 +13,22 @@ Projekt wykorzystuje GitHub Actions do automatyzacji testów i buildów produkcy
 
 ### Instalacja lokalnych zależności
 
-Po dodaniu Vitest do projektu, upewnij się że zależności są zainstalowane:
+Po dodaniu niezbędnych zależności testowych do projektu, upewnij się że są zainstalowane:
 
 ```bash
 npm install
 ```
+
+**Dodane zależności testowe:**
+- `vitest` - framework testowy (kompatybilny z Jest API)
+- `@vitest/ui` - interfejs UI dla Vitest
+- `@vitest/coverage-v8` - wsparcie dla raportów pokrycia kodu
+- `@testing-library/react` - narzędzia do testowania komponentów React
+- `@testing-library/jest-dom` - custom matchery dla DOM
+- `jsdom` - środowisko DOM dla testów
+- `msw` - Mock Service Worker (już był w projekcie)
+
+**Uwaga:** Vitest jest kompatybilny z większością API Jest, ale niektóre matchery (np. `toHaveBeenCalledBefore`) nie są obsługiwane. Używaj standardowych matcherów Vitest.
 
 ### Uruchamianie Workflow
 

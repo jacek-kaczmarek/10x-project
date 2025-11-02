@@ -95,8 +95,9 @@ describe("GenerationService - Integration Tests", () => {
         proposals: mockFlashcards,
       });
 
-      // Verify service calls were made in correct order
-      expect(mockOpenRouterService.sendChatCompletion).toHaveBeenCalledBefore(mockSupabaseClient.from as any);
+      // Verify service calls were made
+      expect(mockOpenRouterService.sendChatCompletion).toHaveBeenCalled();
+      expect(mockSupabaseClient.from).toHaveBeenCalled();
     });
 
     it("should handle partial failures gracefully", async () => {

@@ -11,17 +11,47 @@ const authFile = path.join(__dirname, "../playwright/.auth/user.json");
  * Runs once before all tests to establish authenticated session
  * The session state is saved and reused across all test files
  */
-setup("authenticate", async ({ page }) => {
+setup("authenticate", async ({ page, request }) => {
   const testEmail = process.env.E2E_USERNAME || "missing-dotenv-var@email.com";
   const testPassword = process.env.E2E_PASSWORD || "missing-dotenv-var";
 
   console.log(`🔐 Authenticating as: ${testEmail}`);
+  console.log(`   Password length: ${testPassword.length} characters`);
+
+  // Validate test credentials before attempting login
+  if (!testEmail.includes("@")) {
+    throw new Error(`Invalid test email: ${testEmail}`);
+  }
+  if (testPassword.length < 6) {
+    throw new Error(`Test password is too short (${testPassword.length} chars). Must be at least 6 characters.`);
+  }
+
+  // Verify server is reachable before attempting login
+  try {
+    const healthCheck = await request.get("/");
+    console.log(`✅ Server is reachable (status: ${healthCheck.status()})`);
+  } catch (error) {
+    console.error("❌ Server is not reachable!");
+    console.error(`   Error: ${error}`);
+    console.error("   Make sure the dev server is running on http://localhost:4321");
+    throw error;
+  }
 
   await page.goto("/login");
   console.log("✅ Navigated to /login");
 
   // Wait for React component to hydrate
   await page.waitForSelector('input[name="email"]', { state: "visible" });
+
+  // Wait for React hydration to complete (button should be enabled)
+  await page.waitForFunction(
+    () => {
+      const button = document.querySelector('button[type="submit"]');
+      return button && !button.hasAttribute("disabled");
+    },
+    { timeout: 5000 }
+  );
+  console.log("✅ React hydrated - form is interactive");
 
   // Fill in login form - use type instead of fill to trigger React onChange events
   const emailInput = page.locator('input[name="email"]');
@@ -36,23 +66,81 @@ setup("authenticate", async ({ page }) => {
   // Wait a bit for React state to update
   await page.waitForTimeout(500);
 
+  // Check for client-side validation errors before submitting (with timeout to avoid hanging)
+  const validationErrorLocator = page.locator(".text-destructive").first();
+  const validationErrorCount = await validationErrorLocator.count();
+
+  if (validationErrorCount > 0) {
+    const validationError = await validationErrorLocator.textContent();
+    if (validationError) {
+      console.error(`❌ Client-side validation error: ${validationError}`);
+      await page.screenshot({ path: "validation-error.png", fullPage: true });
+      throw new Error(`Form validation failed: ${validationError}`);
+    }
+  }
+  console.log("✅ No validation errors");
+
   // Submit and wait for navigation
   console.log("🚀 Submitting login form...");
 
-  // Listen for the API response to ensure cookies are set
+  // Check if button is disabled
+  const loginButton = page.getByRole("button", { name: /log in/i });
+  const isDisabled = await loginButton.isDisabled();
+  if (isDisabled) {
+    console.error("❌ Login button is disabled!");
+    await page.screenshot({ path: "button-disabled.png", fullPage: true });
+    throw new Error("Login button is disabled - form might have validation errors");
+  }
+
+  // Listen for any response from the login API (not just 200)
   const loginResponsePromise = page.waitForResponse(
-    (response) => response.url().includes("/api/auth/login") && response.status() === 200,
-    { timeout: 10000 }
+    (response) => {
+      const isLoginAPI = response.url().includes("/api/auth/login");
+      if (isLoginAPI) {
+        console.log(`📡 Login API responded with status: ${response.status()}`);
+      }
+      return isLoginAPI;
+    },
+    { timeout: 15000 } // Increased timeout
   );
 
-  await page.getByRole("button", { name: /log in/i }).click();
+  // Click the login button
+  await loginButton.click();
 
-  // Wait for API response first
+  // Wait for API response
   try {
-    await loginResponsePromise;
-    console.log("✅ Login API responded successfully");
-  } catch {
-    console.error("❌ Login API did not respond");
+    const response = await loginResponsePromise;
+    const status = response.status();
+
+    if (status === 200) {
+      console.log("✅ Login API responded successfully");
+    } else {
+      // Log error details for non-200 responses
+      const responseBody = await response.text();
+      console.error(`❌ Login API returned status ${status}`);
+      console.error(`   Response body: ${responseBody.substring(0, 200)}`);
+
+      // Try to parse as JSON for better error message
+      try {
+        const errorData = JSON.parse(responseBody);
+        console.error(`   Error: ${errorData.error?.message || "Unknown error"}`);
+      } catch {
+        // Not JSON, already logged the text
+      }
+    }
+  } catch (error) {
+    console.error("❌ Login API did not respond within 15 seconds");
+    console.error(`   Error details: ${error}`);
+    console.error("   Possible causes:");
+    console.error("   - Server is not running at http://localhost:4321");
+    console.error("   - API endpoint is blocked or not responding");
+    console.error("   - Supabase credentials are missing or invalid");
+    console.error("   - Network connectivity issue");
+
+    // Take a screenshot to help debug
+    await page.screenshot({ path: "login-api-timeout.png", fullPage: true });
+
+    // Don't throw yet - let the redirect check below handle the final error
   }
 
   // Give browser time to process cookies

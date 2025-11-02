@@ -48,6 +48,7 @@ jobs:
           cat > .env.test << EOF
           SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY=${{ secrets.SUPABASE_PUBLIC_KEY }}
+          SUPABASE_PUBLIC_KEY=${{ secrets.SUPABASE_PUBLIC_KEY }}
           OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
           E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}
           E2E_USERNAME=${{ secrets.E2E_USERNAME }}

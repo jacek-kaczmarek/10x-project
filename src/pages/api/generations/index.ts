@@ -61,7 +61,9 @@ export const POST: APIRoute = async (context) => {
     const supabase = context.locals.supabase;
 
     // Get OpenRouter API key from environment
-    const apiKey = import.meta.env.OPENROUTER_API_KEY;
+    // On Cloudflare: use runtime.env, Locally: use import.meta.env
+    const runtime = context.locals.runtime as { env?: Record<string, string> } | undefined;
+    const apiKey = runtime?.env?.OPENROUTER_API_KEY || import.meta.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       const errorResponse: ErrorResponseDTO = {
         error: {

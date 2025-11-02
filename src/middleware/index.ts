@@ -3,10 +3,12 @@ import { createServerClient } from "@supabase/ssr";
 import type { Database } from "../db/database.types";
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  // Get environment variables - Cloudflare requires accessing via Astro's runtime
-  // On Cloudflare Pages, env vars are injected at build time into import.meta.env
-  const supabaseUrl = import.meta.env.SUPABASE_URL;
-  const supabaseKey = import.meta.env.SUPABASE_KEY;
+  // Get environment variables
+  // On Cloudflare: use context.locals.runtime.env (set via Cloudflare Pages dashboard)
+  // Locally: use import.meta.env
+  const runtime = context.locals.runtime as { env?: Record<string, string> } | undefined;
+  const supabaseUrl = runtime?.env?.SUPABASE_URL || import.meta.env.SUPABASE_URL;
+  const supabaseKey = runtime?.env?.SUPABASE_KEY || import.meta.env.SUPABASE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error("SUPABASE_URL and SUPABASE_KEY must be set in environment variables");

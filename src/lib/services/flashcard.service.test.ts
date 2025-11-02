@@ -396,7 +396,7 @@ describe("FlashcardService", () => {
         }),
       });
 
-      vi.spyOn(mockSupabaseClient, "from").mockImplementation((table: string) => {
+      vi.spyOn(mockSupabaseClient, "from").mockImplementation(() => {
         return {
           select: mockSelect,
           update: mockUpdate,
@@ -436,7 +436,7 @@ describe("FlashcardService", () => {
         }),
       });
 
-      vi.spyOn(mockSupabaseClient, "from").mockImplementation((table: string) => {
+      vi.spyOn(mockSupabaseClient, "from").mockImplementation(() => {
         return {
           select: mockSelect,
           update: mockUpdate,
@@ -497,7 +497,7 @@ describe("FlashcardService", () => {
         }),
       });
 
-      vi.spyOn(mockSupabaseClient, "from").mockImplementation((table: string) => {
+      vi.spyOn(mockSupabaseClient, "from").mockImplementation(() => {
         return {
           select: mockSelect,
           update: mockUpdate,
@@ -533,7 +533,7 @@ describe("FlashcardService", () => {
         }),
       });
 
-      vi.spyOn(mockSupabaseClient, "from").mockImplementation((table: string) => {
+      vi.spyOn(mockSupabaseClient, "from").mockImplementation(() => {
         return {
           select: mockSelect,
           delete: mockDelete,
@@ -585,7 +585,7 @@ describe("FlashcardService", () => {
         }),
       });
 
-      vi.spyOn(mockSupabaseClient, "from").mockImplementation((table: string) => {
+      vi.spyOn(mockSupabaseClient, "from").mockImplementation(() => {
         return {
           select: mockSelect,
           delete: mockDelete,

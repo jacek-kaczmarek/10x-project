@@ -11,6 +11,7 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_KEY || import.meta.env.S
 
 // Only validate if we're in a browser context (not during SSR/build)
 if (typeof window !== "undefined" && (!supabaseUrl || !supabaseAnonKey)) {
+  // eslint-disable-next-line no-console
   console.error("Missing PUBLIC_SUPABASE_URL or PUBLIC_SUPABASE_KEY environment variables");
 }
 

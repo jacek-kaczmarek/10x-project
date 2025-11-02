@@ -1,0 +1,33 @@
+---
+import ProtectedLayout from "../../layouts/ProtectedLayout.astro";
+---
+
+<ProtectedLayout title="Add Flashcard">
+  <div class="container mx-auto max-w-2xl px-4 py-8">
+    <div class="mb-8">
+      <h1 class="mb-2 text-3xl font-bold">Add Flashcard</h1>
+      <p class="text-muted-foreground">Create a flashcard manually</p>
+    </div>
+
+    <div class="rounded-lg border p-6">
+      <p class="text-muted-foreground">
+        Manual flashcard creation will be implemented in the future. For now, please use the Generate feature to create
+        flashcards.
+      </p>
+      <div class="mt-4 flex gap-3">
+        <a
+          href="/generate"
+          class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Go to Generate
+        </a>
+        <a
+          href="/flashcards"
+          class="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent"
+        >
+          Back to Browse
+        </a>
+      </div>
+    </div>
+  </div>
+</ProtectedLayout>

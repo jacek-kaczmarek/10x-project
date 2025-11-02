@@ -155,8 +155,8 @@ export default function GenerateView() {
       const data = await response.json();
       toast.success(`Saved ${data.saved_count} flashcards`);
 
-      // Redirect to flashcards list or home after successful save
-      window.location.href = "/";
+      // Redirect to flashcards list after successful save
+      window.location.href = "/flashcards";
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred during saving";
       toast.error("Save error", {

@@ -72,3 +72,38 @@ export const updateFlashcardCommandSchema = z.object({
   ease_factor: z.number().min(1.3).max(2.5).optional(),
   repetitions: z.number().int().min(0).optional(),
 });
+
+/**
+ * Validator for list flashcards query parameters
+ * Validates GET /api/flashcards query params with filtering, search, sorting, and pagination
+ */
+export const listFlashcardsQuerySchema = z.object({
+  // Filters
+  status: z.enum(["active", "rejected", "all"]).optional().default("all"),
+  source: z.enum(["manual", "ai", "ai-edited", "all"]).optional().default("all"),
+  search: z.string().min(1).max(200).optional(),
+  due: z
+    .string()
+    .optional()
+    .default("false")
+    .transform((val) => val === "true"),
+  generation_id: z.string().uuid().optional(),
+
+  // Pagination
+  page: z
+    .string()
+    .optional()
+    .default("1")
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().min(1)),
+  limit: z
+    .string()
+    .optional()
+    .default("20")
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().min(1).max(100)),
+
+  // Sorting
+  sort: z.enum(["created_at", "updated_at", "due_date"]).optional().default("created_at"),
+  order: z.enum(["asc", "desc"]).optional().default("desc"),
+});

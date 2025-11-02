@@ -1,0 +1,8 @@
+---
+import ProtectedLayout from "../layouts/ProtectedLayout.astro";
+import FlashcardsView from "../components/Flashcards/FlashcardsView";
+---
+
+<ProtectedLayout title="My Flashcards">
+  <FlashcardsView client:load />
+</ProtectedLayout>

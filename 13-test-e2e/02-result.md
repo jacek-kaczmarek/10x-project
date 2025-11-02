@@ -11,7 +11,7 @@
 
 ## Dodane atrybuty data-test-id
 
-### 1. GenerationForm (krok 1-2)
+### 1. GenerationForm (kroki 1-2)
 
 **Plik:** `src/components/Generate/GenerationForm.tsx`
 

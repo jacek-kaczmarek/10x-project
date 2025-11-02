@@ -11,6 +11,14 @@ Projekt wykorzystuje GitHub Actions do automatyzacji testów i buildów produkcy
 
 ## Konfiguracja
 
+### Instalacja lokalnych zależności
+
+Po dodaniu Vitest do projektu, upewnij się że zależności są zainstalowane:
+
+```bash
+npm install
+```
+
 ### Uruchamianie Workflow
 
 Pipeline jest uruchamiany automatycznie gdy:

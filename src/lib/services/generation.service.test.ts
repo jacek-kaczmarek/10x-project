@@ -130,7 +130,7 @@ describe("GenerationService", () => {
       expect(insertCall).toHaveBeenCalledWith({
         model: OPENROUTER_CONFIG.DEFAULT_MODEL,
         source_text_length: mockSourceText.length,
-        source_text_hash: "mocked-hash-value",
+        source_text_hash: expect.any(String), // Web Crypto API generates real hash
         flashcards_generated: 10,
         user_id: mockUserId,
       });
@@ -223,7 +223,7 @@ describe("GenerationService", () => {
           error_type: "Error",
           error_message: expect.stringContaining("Test error"),
           source_text_length: mockSourceText.length,
-          source_text_hash: "mocked-hash-value",
+          source_text_hash: expect.any(String), // Web Crypto API generates real hash
           model: OPENROUTER_CONFIG.DEFAULT_MODEL,
           user_id: mockUserId,
         })

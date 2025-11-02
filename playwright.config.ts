@@ -50,6 +50,8 @@ export default defineConfig({
     {
       name: "setup",
       testMatch: /.*\.setup\.ts/,
+      timeout: 60000, // 60s timeout for auth setup (handles slow CI/Supabase)
+      retries: process.env.CI ? 2 : 0, // Retry auth setup on CI for transient failures
     },
     // Authenticated tests - reuse auth state from setup
     {

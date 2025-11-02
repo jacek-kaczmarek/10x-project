@@ -12,6 +12,9 @@ const authFile = path.join(__dirname, "../playwright/.auth/user.json");
  * The session state is saved and reused across all test files
  */
 setup("authenticate", async ({ page, request }) => {
+  // Set a longer timeout for this test to handle slow CI environments
+  // Includes time for: warmup (2s) + page load (5s) + form fill (2s) + API (30s) + redirect (20s) = ~60s
+  setup.setTimeout(90000); // 90 seconds
   const testEmail = process.env.E2E_USERNAME || "missing-dotenv-var@email.com";
   const testPassword = process.env.E2E_PASSWORD || "missing-dotenv-var";
 
@@ -26,10 +29,20 @@ setup("authenticate", async ({ page, request }) => {
     throw new Error(`Test password is too short (${testPassword.length} chars). Must be at least 6 characters.`);
   }
 
-  // Verify server is reachable before attempting login
+  // Verify server is reachable and warm up Supabase connection
+  console.log("🔥 Warming up server and Supabase connection...");
   try {
-    const healthCheck = await request.get("/");
-    console.log(`✅ Server is reachable (status: ${healthCheck.status()})`);
+    // Make 2-3 warmup requests to ensure Supabase client is ready
+    // This helps avoid cold start timeouts in CI environments
+    for (let i = 0; i < 3; i++) {
+      const healthCheck = await request.get("/");
+      if (i === 0) {
+        console.log(`✅ Server is reachable (status: ${healthCheck.status()})`);
+      }
+      // Wait a bit between warmup requests
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    console.log("✅ Warmup completed - Supabase connection established");
   } catch (error) {
     console.error("❌ Server is not reachable!");
     console.error(`   Error: ${error}`);
@@ -53,18 +66,22 @@ setup("authenticate", async ({ page, request }) => {
   );
   console.log("✅ React hydrated - form is interactive");
 
-  // Fill in login form - use type instead of fill to trigger React onChange events
+  // Fill in login form - use pressSequentially to properly trigger React onChange events
+  // Playwright's fill() doesn't trigger onChange for controlled React inputs
   const emailInput = page.locator('input[name="email"]');
   const passwordInput = page.locator('input[name="password"]');
 
   await emailInput.click();
-  await emailInput.fill(testEmail);
+  await emailInput.clear();
+  await emailInput.pressSequentially(testEmail, { delay: 50 });
+
   await passwordInput.click();
-  await passwordInput.fill(testPassword);
+  await passwordInput.clear();
+  await passwordInput.pressSequentially(testPassword, { delay: 50 });
   console.log("✅ Filled login form");
 
-  // Wait a bit for React state to update
-  await page.waitForTimeout(500);
+  // Wait for React state to update and re-render
+  await page.waitForTimeout(300);
 
   // Check for client-side validation errors before submitting (with timeout to avoid hanging)
   const validationErrorLocator = page.locator(".text-destructive").first();
@@ -101,19 +118,21 @@ setup("authenticate", async ({ page, request }) => {
       }
       return isLoginAPI;
     },
-    { timeout: 15000 } // Increased timeout
+    { timeout: 30000 } // 30s timeout for API response (handles slow CI/Supabase even after warmup)
   );
 
   // Click the login button
   await loginButton.click();
 
-  // Wait for API response
+  // Wait for API response with proper error handling
+  let loginSucceeded = false;
   try {
     const response = await loginResponsePromise;
     const status = response.status();
 
     if (status === 200) {
       console.log("✅ Login API responded successfully");
+      loginSucceeded = true;
     } else {
       // Log error details for non-200 responses
       const responseBody = await response.text();
@@ -127,38 +146,59 @@ setup("authenticate", async ({ page, request }) => {
       } catch {
         // Not JSON, already logged the text
       }
+
+      await page.screenshot({ path: "login-api-error.png", fullPage: true });
+      throw new Error(`Login API returned error status: ${status}`);
     }
   } catch (error) {
-    console.error("❌ Login API did not respond within 15 seconds");
-    console.error(`   Error details: ${error}`);
-    console.error("   Possible causes:");
-    console.error("   - Server is not running at http://localhost:4321");
-    console.error("   - API endpoint is blocked or not responding");
-    console.error("   - Supabase credentials are missing or invalid");
-    console.error("   - Network connectivity issue");
+    if (!loginSucceeded) {
+      console.error("❌ Login API did not respond within 30 seconds");
+      console.error(`   Error details: ${error}`);
+      console.error("   Possible causes:");
+      console.error("   - Server is not running at http://localhost:4321");
+      console.error("   - API endpoint is blocked or not responding");
+      console.error("   - Supabase API is slow or timing out");
+      console.error("   - Network connectivity issue in CI environment");
 
-    // Take a screenshot to help debug
-    await page.screenshot({ path: "login-api-timeout.png", fullPage: true });
+      // Take a screenshot to help debug
+      try {
+        await page.screenshot({ path: "login-api-timeout.png", fullPage: true });
+      } catch {
+        // Ignore screenshot errors if page is closed
+      }
 
-    // Don't throw yet - let the redirect check below handle the final error
+      // Fail fast - don't continue if API didn't respond
+      throw new Error(`Login API timeout: ${error}`);
+    }
   }
 
-  // Give browser time to process cookies
+  // Give browser time to process cookies and client-side redirect
   await page.waitForTimeout(1000);
 
   // Wait for successful login (redirect to /generate)
-  // Increased timeout to handle slow API/middleware responses
   console.log("⏳ Waiting for redirect to /generate...");
 
   try {
     await page.waitForURL("**/generate", {
-      timeout: 30000,
+      timeout: 20000, // Reduced from 30s since we already waited for API
     });
     console.log("✅ Redirected to /generate");
-  } catch {
+  } catch (redirectError) {
+    // Defensive check: ensure page is still open before accessing it
+    if (page.isClosed()) {
+      console.error("❌ Page was closed before redirect completed");
+      throw new Error("Test timeout exceeded - page closed during redirect");
+    }
+
     // If redirect fails, check for error messages
     const currentUrl = page.url();
-    const errorMessage = await page.locator(".text-destructive").first().textContent();
+    let errorMessage = null;
+
+    try {
+      errorMessage = await page.locator(".text-destructive").first().textContent({ timeout: 2000 });
+    } catch {
+      // No error message found, that's okay
+    }
 
     console.error("❌ Login failed or redirect timeout:");
     console.error("   Current URL:", currentUrl);
@@ -170,12 +210,21 @@ setup("authenticate", async ({ page, request }) => {
     }
 
     // Log all cookies for debugging
-    const cookies = await page.context().cookies();
-    console.error("   Cookies:", cookies.map((c) => `${c.name}=${c.value.substring(0, 20)}...`).join(", "));
+    try {
+      const cookies = await page.context().cookies();
+      console.error("   Cookies:", cookies.map((c) => `${c.name}=${c.value.substring(0, 20)}...`).join(", "));
+    } catch {
+      console.error("   Could not retrieve cookies");
+    }
 
     // Take screenshot for debugging
-    await page.screenshot({ path: "login-failure.png", fullPage: true });
-    throw new Error(`Login failed: ${errorMessage || "Timeout waiting for redirect to /generate"}`);
+    try {
+      await page.screenshot({ path: "login-failure.png", fullPage: true });
+    } catch {
+      // Ignore screenshot errors if page is closed
+    }
+
+    throw new Error(`Login redirect failed: ${errorMessage || redirectError}`);
   }
 
   // Verify we're actually logged in by checking for expected elements

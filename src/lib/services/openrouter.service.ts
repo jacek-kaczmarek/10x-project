@@ -1,6 +1,5 @@
 // src/lib/services/openrouter.service.ts
 import axios, { type AxiosInstance, type AxiosError } from "axios";
-import Ajv, { type ValidateFunction } from "ajv";
 import { OPENROUTER_CONFIG } from "../config/openrouter.config";
 
 /**
@@ -112,7 +111,6 @@ export class OpenRouterService {
   public readonly timeoutMs: number;
 
   private readonly httpClient: AxiosInstance;
-  private readonly ajv: Ajv;
   private systemMessage?: string;
   private readonly maxRetries = OPENROUTER_CONFIG.RETRY.MAX_RETRIES;
   private readonly retryDelayMs = OPENROUTER_CONFIG.RETRY.INITIAL_DELAY_MS;
@@ -142,12 +140,6 @@ export class OpenRouterService {
         "HTTP-Referer": OPENROUTER_CONFIG.HEADERS.HTTP_REFERER,
         "X-Title": OPENROUTER_CONFIG.HEADERS.X_TITLE,
       },
-    });
-
-    // Initialize AJV for JSON Schema validation
-    this.ajv = new Ajv({
-      strict: true,
-      allErrors: true,
     });
   }
 
@@ -421,18 +413,19 @@ export class OpenRouterService {
 
   /**
    * Validates response against JSON schema
+   * Manual validation without code generation (Cloudflare Workers compatible)
    * @param data - Parsed response data
    * @param responseFormat - Response format with JSON schema
    */
   private validateResponseFormat(data: unknown, responseFormat: ResponseFormat): void {
     try {
       const schema = responseFormat.json_schema.schema;
-      const validate: ValidateFunction = this.ajv.compile(schema);
+      const errors: { path: string; message: string }[] = [];
 
-      const valid = validate(data);
+      // Manual validation logic for our flashcard schema
+      this.validateSchema(data, schema, "", errors);
 
-      if (!valid) {
-        const errors = validate.errors || [];
+      if (errors.length > 0) {
         console.error("Schema validation errors:", errors);
         throw new OpenRouterSchemaValidationError("Response does not match expected schema", errors);
       }
@@ -443,6 +436,114 @@ export class OpenRouterService {
       throw new OpenRouterSchemaValidationError(
         `Schema validation failed: ${error instanceof Error ? error.message : "Unknown error"}`
       );
+    }
+  }
+
+  /**
+   * Recursive schema validator (Cloudflare Workers compatible)
+   * @param data - Data to validate
+   * @param schema - JSON schema definition
+   * @param path - Current path in the data structure
+   * @param errors - Array to collect validation errors
+   */
+  private validateSchema(
+    data: unknown,
+    schema: Record<string, unknown>,
+    path: string,
+    errors: { path: string; message: string }[]
+  ): void {
+    // Type validation
+    const schemaType = schema.type as string | undefined;
+    if (schemaType) {
+      const actualType = Array.isArray(data) ? "array" : typeof data;
+      if (actualType !== schemaType && data !== null) {
+        errors.push({ path, message: `Expected type ${schemaType}, got ${actualType}` });
+        return;
+      }
+    }
+
+    // Object validation
+    if (schemaType === "object" && typeof data === "object" && data !== null && !Array.isArray(data)) {
+      const dataObj = data as Record<string, unknown>;
+      const properties = schema.properties as Record<string, Record<string, unknown>> | undefined;
+      const required = schema.required as string[] | undefined;
+      const additionalProperties = schema.additionalProperties as boolean | undefined;
+
+      // Check required properties
+      if (required) {
+        for (const prop of required) {
+          if (!(prop in dataObj)) {
+            errors.push({ path: `${path}.${prop}`, message: `Required property missing: ${prop}` });
+          }
+        }
+      }
+
+      // Validate properties
+      if (properties) {
+        for (const [prop, propSchema] of Object.entries(properties)) {
+          if (prop in dataObj) {
+            this.validateSchema(dataObj[prop], propSchema, `${path}.${prop}`, errors);
+          }
+        }
+      }
+
+      // Check for additional properties
+      if (additionalProperties === false && properties) {
+        const allowedProps = new Set(Object.keys(properties));
+        for (const prop of Object.keys(dataObj)) {
+          if (!allowedProps.has(prop)) {
+            errors.push({ path: `${path}.${prop}`, message: `Additional property not allowed: ${prop}` });
+          }
+        }
+      }
+    }
+
+    // Array validation
+    if (schemaType === "array" && Array.isArray(data)) {
+      const items = schema.items as Record<string, unknown> | undefined;
+      const minItems = schema.minItems as number | undefined;
+      const maxItems = schema.maxItems as number | undefined;
+
+      // Check array length
+      if (minItems !== undefined && data.length < minItems) {
+        errors.push({ path, message: `Array must have at least ${minItems} items, got ${data.length}` });
+      }
+      if (maxItems !== undefined && data.length > maxItems) {
+        errors.push({ path, message: `Array must have at most ${maxItems} items, got ${data.length}` });
+      }
+
+      // Validate each item
+      if (items) {
+        data.forEach((item, index) => {
+          this.validateSchema(item, items, `${path}[${index}]`, errors);
+        });
+      }
+    }
+
+    // String validation
+    if (schemaType === "string" && typeof data === "string") {
+      const minLength = schema.minLength as number | undefined;
+      const maxLength = schema.maxLength as number | undefined;
+
+      if (minLength !== undefined && data.length < minLength) {
+        errors.push({ path, message: `String must be at least ${minLength} characters, got ${data.length}` });
+      }
+      if (maxLength !== undefined && data.length > maxLength) {
+        errors.push({ path, message: `String must be at most ${maxLength} characters, got ${data.length}` });
+      }
+    }
+
+    // Number validation
+    if (schemaType === "number" && typeof data === "number") {
+      const minimum = schema.minimum as number | undefined;
+      const maximum = schema.maximum as number | undefined;
+
+      if (minimum !== undefined && data < minimum) {
+        errors.push({ path, message: `Number must be at least ${minimum}, got ${data}` });
+      }
+      if (maximum !== undefined && data > maximum) {
+        errors.push({ path, message: `Number must be at most ${maximum}, got ${data}` });
+      }
     }
   }
 

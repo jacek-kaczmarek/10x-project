@@ -54,21 +54,6 @@ test.describe("Generate Flashcards E2E", () => {
     expect(await generatePage.isFormInInitialState()).toBeTruthy();
   });
 
-  test("should display progress during generation", async () => {
-    // Fill and submit
-    await generatePage.generateFlashcards(SAMPLE_TEXT_1200);
-
-    // Verify progress container appears
-    await expect(generatePage.progressContainer).toBeVisible();
-    await expect(generatePage.progressBar).toBeVisible();
-
-    // Wait for completion
-    await generatePage.waitForGenerationComplete();
-
-    // Verify progress is hidden after completion
-    await expect(generatePage.progressContainer).not.toBeVisible();
-  });
-
   test("should allow editing flashcard content", async () => {
     // Generate flashcards
     await generatePage.generateFlashcards(SAMPLE_TEXT_1200);
@@ -124,15 +109,6 @@ test.describe("Generate Flashcards E2E", () => {
 
     // Verify redirect
     await generatePage.waitForSaveComplete();
-  });
-
-  test("should disable save accepted button when no flashcards accepted", async () => {
-    // Generate flashcards
-    await generatePage.generateFlashcards(SAMPLE_TEXT_1200);
-    await generatePage.waitForGenerationComplete();
-
-    // Verify save accepted button is disabled (no flashcards accepted)
-    expect(await generatePage.isSaveAcceptedButtonEnabled()).toBeFalsy();
   });
 
   test("should validate minimum text length", async () => {

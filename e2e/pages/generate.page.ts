@@ -1,4 +1,5 @@
 import type { Page, Locator } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { BasePage } from "./base.page";
 
 /**
@@ -75,12 +76,12 @@ export class GeneratePage extends BasePage {
    * Submit generation form
    */
   async submitGeneration() {
-    // Wait for button to be enabled before clicking
+    // Wait for button to be enabled before click
     await this.submitButton.waitFor({ state: "visible" });
-    const buttonHandle = await this.submitButton.elementHandle();
-    if (buttonHandle) {
-      await this.page.waitForFunction((button) => !button.hasAttribute("disabled"), buttonHandle);
-    }
+    // Wait for button to be enabled (not disabled)
+    await this.submitButton.waitFor({ state: "attached" });
+    // Use Playwright's built-in method to wait for enabled state
+    await expect(this.submitButton).toBeEnabled({ timeout: 10000 });
     await this.submitButton.click();
   }
 
@@ -158,7 +159,7 @@ export class GeneratePage extends BasePage {
    * Wait for save operation to complete and redirect
    */
   async waitForSaveComplete() {
-    await this.page.waitForURL("/generate", { timeout: 10000 });
+    await this.page.waitForURL("/flashcards", { timeout: 10000 });
   }
 
   /**

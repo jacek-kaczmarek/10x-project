@@ -1,6 +1,6 @@
 # 10x Cards
 
-> A web application for students to rapidly create and manage educational flashcards, leveraging AI generation and spaced-repetition sessions.
+> A web application for students to rapidly create and manage educational flashcards, leveraging AI generation and spaced-repetition sessions
 
 ## Table of Contents
 

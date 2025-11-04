@@ -23,11 +23,14 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
 
-  /* Opt out of parallel tests on CI. */
+  /* Opt out of parallel tests on CI.*/
   workers: process.env.CI ? 1 : undefined,
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
+  reporter: process.env.CI ? [["list"], ["html"]] : "html",
+
+  /* Global timeout for all tests - increased for slow OpenRouter API in CI */
+  timeout: 90000, // 90 seconds per test (allows time for API calls)
 
   /* Global teardown - runs once after all tests */
   globalTeardown: "./e2e/global.teardown.ts",
@@ -50,12 +53,15 @@ export default defineConfig({
     {
       name: "setup",
       testMatch: /.*\.setup\.ts/,
-      timeout: 60000, // 60s timeout for auth setup (handles slow CI/Supabase)
+      timeout: 90000, // 90s timeout for auth setup (handles slow CI/Supabase with warmup)
       retries: process.env.CI ? 2 : 0, // Retry auth setup on CI for transient failures
     },
     // Authenticated tests - reuse auth state from setup
     {
       name: "chromium",
+      // ensure to include / run the flashcards test
+      testMatch: /.*\.spec\.ts/,
+      //testIgnore: /.*\.(setup|teardown)\.ts/, // Exclude setup/teardown files from test runs
       use: {
         ...devices["Desktop Chrome"],
         // Use signed-in state from setup

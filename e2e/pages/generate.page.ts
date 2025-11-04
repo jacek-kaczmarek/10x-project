@@ -76,7 +76,7 @@ export class GeneratePage extends BasePage {
    * Submit generation form
    */
   async submitGeneration() {
-    // Wait for button to be enabled before clicking
+    // Wait for button to be enabled before click
     await this.submitButton.waitFor({ state: "visible" });
     // Wait for button to be enabled (not disabled)
     await this.submitButton.waitFor({ state: "attached" });

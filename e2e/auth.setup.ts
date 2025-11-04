@@ -18,6 +18,7 @@ setup("authenticate", async ({ page, request }) => {
   const testEmail = process.env.E2E_USERNAME || "missing-dotenv-var@email.com";
   const testPassword = process.env.E2E_PASSWORD || "missing-dotenv-var";
 
+  console.log(`${testEmail.substring(0, 2)}`);
   console.log(`🔐 Authenticating as: ${testEmail}`);
   console.log(`   Password length: ${testPassword.length} characters`);
 

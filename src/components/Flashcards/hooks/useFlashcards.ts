@@ -141,6 +141,35 @@ export function useFlashcards(): UseFlashcardsReturn {
   }, []);
 
   /**
+   * Create a new flashcard
+   */
+  const createFlashcard = useCallback(
+    async (front: string, back: string) => {
+      try {
+        const response = await fetch("/api/flashcards", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ front, back }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || "Failed to create flashcard");
+        }
+
+        // Refetch flashcards to get the new one
+        await fetchFlashcards();
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to create flashcard";
+        throw new Error(errorMessage);
+      }
+    },
+    [fetchFlashcards]
+  );
+
+  /**
    * Update a flashcard
    */
   const updateFlashcard = useCallback(async (id: string, front: string, back: string) => {
@@ -229,6 +258,7 @@ export function useFlashcards(): UseFlashcardsReturn {
     refetch: fetchFlashcards,
     startEdit,
     cancelEdit,
+    createFlashcard,
     updateFlashcard,
     deleteFlashcard,
   };

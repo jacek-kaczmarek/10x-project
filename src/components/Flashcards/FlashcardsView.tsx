@@ -1,11 +1,10 @@
 // src/components/Flashcards/FlashcardsView.tsx
 import { Toaster } from "@/components/ui/sonner";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import SearchInput from "./SearchInput";
 import FilterPanel from "./FilterPanel";
 import FlashcardsTable from "./FlashcardsTable";
 import Pagination from "./Pagination";
+import AddFlashcardModal from "./AddFlashcardModal";
 import { useFlashcards } from "./hooks/useFlashcards";
 
 /**
@@ -24,6 +23,7 @@ export default function FlashcardsView() {
     setSearch,
     startEdit,
     cancelEdit,
+    createFlashcard,
     updateFlashcard,
     deleteFlashcard,
   } = useFlashcards();
@@ -38,12 +38,7 @@ export default function FlashcardsView() {
           <h1 className="mb-2 text-3xl font-bold">My Flashcards</h1>
           <p className="text-muted-foreground">Browse, search, and manage your saved flashcards</p>
         </div>
-        <a href="/flashcards/new">
-          <Button size="lg" aria-label="Add new flashcard manually">
-            <Plus className="size-4" />
-            Add Flashcard
-          </Button>
-        </a>
+        <AddFlashcardModal onAdd={createFlashcard} />
       </div>
 
       {/* Search */}

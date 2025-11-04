@@ -69,6 +69,7 @@ async function globalTeardown() {
     // Create Supabase client for cleanup
     const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
+    console.log(`${testUserId.substring(0, 2)}`);
     console.log(`🔍 Cleaning up data for test user: ${testUserId}`);
 
     // First, check what data exists before cleanup

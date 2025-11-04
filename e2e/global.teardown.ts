@@ -72,7 +72,7 @@ async function globalTeardown() {
     console.log(`${testUserId.substring(0, 2)}`);
     console.log(`🔍 Cleaning up data for test user: ${testUserId}`);
 
-    // First, check what data exists before cleanup
+    // First, check what data exists before cleanups
     const { data: existingFlashcards } = await supabase
       .from("flashcards")
       .select("id, status, source")

@@ -326,7 +326,7 @@ export default function FlashcardsTable({
                 </TableRow>
               );
             })}
-        </TableBody>
+          </TableBody>
         </Table>
       </div>
     </>

@@ -38,7 +38,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:3000";
     const emailRedirectTo = `${siteUrl}/auth/callback`;
 
-    // 4. Sign up with Supabase (requires email confirmation)
+    // 4. Sign up with Supabase
+    // Note: Email confirmation behavior is controlled by Supabase server settings:
+    // - Local: supabase/config.toml -> [auth.email] -> enable_confirmations
+    // - Production: Supabase Dashboard -> Authentication -> Settings -> Email Auth
     const { data, error } = await locals.supabase.auth.signUp({
       email,
       password,
@@ -67,14 +70,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // 7. Return success response (user needs to confirm email)
+    // 7. Check if email confirmation was required
+    // When Supabase email confirmation is disabled, a session is created immediately
+    // When enabled, data.session will be null and user needs to confirm via email
+    const requiresEmailConfirmation = data.session === null;
+
+    // 8. Return success response
     const response: RegisterResponseDTO = {
-      message: "Account created successfully. Please check your email to confirm your account.",
+      message: requiresEmailConfirmation
+        ? "Account created successfully. Please check your email to confirm your account."
+        : "Account created successfully. You are now logged in.",
       user: {
         id: data.user.id,
         email: data.user.email || "",
       },
-      requiresEmailConfirmation: true,
+      requiresEmailConfirmation,
     };
 
     return new Response(JSON.stringify(response), {

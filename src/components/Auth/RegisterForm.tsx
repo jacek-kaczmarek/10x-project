@@ -87,8 +87,12 @@ export function RegisterForm({ error: initialError }: RegisterFormProps) {
         setSuccessMessage(successData.message);
         setIsLoading(false);
       } else {
-        // Auto-login (fallback for when email confirmation is disabled)
-        window.location.href = "/generate";
+        // Auto-login (when email confirmation is disabled in Supabase)
+        // Show brief success message before redirect
+        setSuccessMessage(successData.message);
+        setTimeout(() => {
+          window.location.href = "/generate";
+        }, 1000);
       }
     } catch (error) {
       console.error("Registration error:", error);

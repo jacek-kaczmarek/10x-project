@@ -1,6 +1,7 @@
 ---
 import type { User } from "@supabase/supabase-js";
 import { LogoutButton } from "./Auth/LogoutButton";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
   user?: User | null;
@@ -14,6 +15,7 @@ const { user } = Astro.props;
     <a href="/" class="text-xl font-semibold hover:text-primary transition-colors"> 10x Cards </a>
 
     <div class="flex items-center gap-4">
+      <ThemeToggle client:load />
       {
         user ? (
           <>

@@ -41,6 +41,7 @@ export interface UseFlashcardsReturn {
   refetch: () => Promise<void>;
   startEdit: (id: string) => void;
   cancelEdit: (id: string) => void;
+  createFlashcard: (front: string, back: string) => Promise<void>;
   updateFlashcard: (id: string, front: string, back: string) => Promise<void>;
   deleteFlashcard: (id: string) => Promise<void>;
 }
